@@ -8,7 +8,7 @@ declare global {
   }
 }
 
-// EIP-712 Types for authentication
+// EIP-712 Types for authentication - this was missing!
 const AUTH_TYPES = {
   EIP712Domain: [{ name: "name", type: "string" }],
   Policy: [
@@ -56,7 +56,6 @@ class YellowTradingService {
   private positions: Map<string, Position> = new Map()
   private authTimeout: NodeJS.Timeout | null = null
   private connectionTimeout: NodeJS.Timeout | null = null
-  private isDemoMode = false
 
   // ClearNode WebSocket URL from documentation
   private clearNodeUrl = "wss://clearnet.yellow.com/ws"
@@ -65,7 +64,7 @@ class YellowTradingService {
     this.loadPositionsFromStorage()
   }
 
-  // Initialize the trading service with better error handling
+  // Initialize the trading service with detailed logging
   async initialize(privateKey: string): Promise<boolean> {
     try {
       console.log("🚀 YellowTradingService: Starting initialization...")
@@ -81,27 +80,18 @@ class YellowTradingService {
         throw new Error("Invalid private key format")
       }
 
-      // Try to connect to ClearNode with shorter timeout
-      console.log("🌐 YellowTradingService: Attempting to connect to ClearNode...")
-      console.log("ℹ️ YellowTradingService: Note - This requires a channel created at apps.yellow.com")
-
-      try {
-        await this.connectToClearNode()
-        console.log("✅ YellowTradingService: Successfully connected to ClearNode")
-        return true
-      } catch (error) {
-        console.warn("⚠️ YellowTradingService: ClearNode connection failed:", error.message)
-        console.log("🎮 YellowTradingService: Falling back to demo mode...")
-        this.createDemoSession()
-        return true
-      }
+      // Connect to ClearNode with timeout
+      console.log("🌐 YellowTradingService: Connecting to ClearNode...")
+      await this.connectToClearNode()
+      console.log("✅ YellowTradingService: Initialization completed successfully")
+      return true
     } catch (error) {
       console.error("💥 YellowTradingService: Failed to initialize:", error)
 
-      // Always fall back to demo mode if anything fails
-      console.log("🎮 YellowTradingService: Creating demo session as final fallback...")
+      // If ClearNode fails, create a demo session
+      console.log("🎮 YellowTradingService: Creating demo session as fallback...")
       this.createDemoSession()
-      return true
+      return true // Return true so the app can continue in demo mode
     }
   }
 
@@ -110,7 +100,6 @@ class YellowTradingService {
     if (!this.stateWallet) return
 
     console.log("🎮 YellowTradingService: Setting up demo mode...")
-    this.isDemoMode = true
     this.isConnected = true // Simulate connection
     this.isAuthenticated = true // Simulate authentication
 
@@ -124,35 +113,30 @@ class YellowTradingService {
     }
 
     console.log("✅ YellowTradingService: Demo session created:", this.currentSession.appSessionId)
-    console.log("ℹ️ YellowTradingService: Running in DEMO MODE - no real transactions")
   }
 
-  // Connect to ClearNode WebSocket with shorter timeout
+  // Connect to ClearNode WebSocket with proper timeout handling
   private async connectToClearNode(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         console.log("🔌 YellowTradingService: Creating WebSocket connection to:", this.clearNodeUrl)
         this.ws = new WebSocket(this.clearNodeUrl)
 
-        // Shorter connection timeout
+        // Connection timeout
         this.connectionTimeout = setTimeout(() => {
           console.error("⏰ YellowTradingService: WebSocket connection timeout")
           if (this.ws) {
             this.ws.close()
           }
           reject(new Error("WebSocket connection timeout"))
-        }, 8000) // 8 second timeout
+        }, 10000) // 10 second timeout
 
-        // Shorter authentication timeout
+        // Authentication timeout
         this.authTimeout = setTimeout(() => {
           console.error("⏰ YellowTradingService: Authentication timeout - no challenge received")
-          console.log("💡 YellowTradingService: This usually means:")
-          console.log("   1. You need to create a channel at apps.yellow.com")
-          console.log("   2. The ClearNode service is not responding")
-          console.log("   3. Your auth request format is incorrect")
           if (this.connectionTimeout) clearTimeout(this.connectionTimeout)
           reject(new Error("Authentication timeout - ClearNode not responding"))
-        }, 12000) // 12 second auth timeout
+        }, 20000) // 20 second auth timeout
 
         this.ws.onopen = async () => {
           if (this.connectionTimeout) {
@@ -162,13 +146,13 @@ class YellowTradingService {
           console.log("✅ YellowTradingService: WebSocket connected to ClearNode")
           this.isConnected = true
 
-          // Start authentication with better error handling
+          // Start authentication
           console.log("🔐 YellowTradingService: Starting authentication...")
           try {
             await this.authenticate()
           } catch (authError) {
             if (this.authTimeout) clearTimeout(this.authTimeout)
-            console.error("❌ YellowTradingService: Authentication setup failed:", authError)
+            console.error("❌ YellowTradingService: Authentication failed:", authError)
             reject(authError)
           }
         }
@@ -200,7 +184,7 @@ class YellowTradingService {
     })
   }
 
-  // Enhanced authentication with better debugging
+  // Corrected authentication method
   private async authenticate(): Promise<void> {
     if (!this.stateWallet || !this.ws) {
       throw new Error("Wallet or WebSocket not available")
@@ -208,65 +192,43 @@ class YellowTradingService {
 
     try {
       console.log("🔐 YellowTradingService: Creating authentication request...")
-      console.log("📋 YellowTradingService: Using wallet address:", this.stateWallet.address)
 
-      // Try different auth request formats to see which one works
-      let authRequest: string
-
-      try {
-        // Method 1: Using object format as shown in documentation
-        authRequest = await createAuthRequestMessage({
-          wallet: this.stateWallet.address,
-          participant: this.stateWallet.address,
-          app_name: "TokenSwiper",
-          expire: Math.floor(Date.now() / 1000) + 3600,
-          scope: "trading",
-          application: this.stateWallet.address,
-          allowances: [],
-        })
-        console.log("✅ YellowTradingService: Auth request created using object format")
-      } catch (error) {
-        console.warn("⚠️ YellowTradingService: Object format failed, trying alternative...")
-
-        // Method 2: Try with message signer first parameter
-        const messageSigner = async (payload: any) => {
-          const message = JSON.stringify(payload)
-          const digestHex = ethers.id(message)
-          const messageBytes = ethers.getBytes(digestHex)
-          const { serialized: signature } = this.stateWallet!.signingKey.sign(messageBytes)
-          return signature
-        }
-
-        authRequest = await createAuthRequestMessage(messageSigner, this.stateWallet.address)
-        console.log("✅ YellowTradingService: Auth request created using signer format")
-      }
+      // Corrected auth request - using the proper format from documentation
+      const authRequest = await createAuthRequestMessage({
+        wallet: this.stateWallet.address,
+        participant: this.stateWallet.address,
+        app_name: "TokenSwiper",
+        expire: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiration
+        scope: "trading",
+        application: this.stateWallet.address,
+        allowances: [],
+      })
 
       console.log("📤 YellowTradingService: Sending auth request...")
-      console.log("📋 YellowTradingService: Auth request preview:", authRequest.substring(0, 300) + "...")
-
-      // Send the request
+      console.log("📋 YellowTradingService: Auth request preview:", authRequest.substring(0, 200) + "...")
       this.ws.send(authRequest)
-      console.log("✅ YellowTradingService: Auth request sent, waiting for challenge...")
     } catch (error) {
       console.error("💥 YellowTradingService: Authentication request failed:", error)
       throw error
     }
   }
 
-  // Handle incoming WebSocket messages
+  // Handle incoming WebSocket messages with proper authentication flow
   private async handleMessage(data: string, resolve?: Function, reject?: Function): Promise<void> {
     try {
       const message = JSON.parse(data)
-      const messageType = message.res?.[1] || message.err?.[1] || "unknown"
-      console.log("📨 YellowTradingService: Processing message type:", messageType)
+      console.log(
+        "📨 YellowTradingService: Processing message type:",
+        message.res?.[1] || message.err?.[1] || "unknown",
+      )
 
       if (message.res && message.res[1] === "auth_challenge") {
-        console.log("🔐 YellowTradingService: Received auth challenge!")
+        console.log("🔐 YellowTradingService: Received auth challenge")
         if (this.authTimeout) {
           clearTimeout(this.authTimeout)
           this.authTimeout = null
         }
-        await this.handleAuthChallenge(message, data)
+        await this.handleAuthChallenge(message)
       } else if (message.res && message.res[1] === "auth_success") {
         console.log("✅ YellowTradingService: Authentication successful!")
         this.isAuthenticated = true
@@ -278,7 +240,7 @@ class YellowTradingService {
         }
 
         await this.createTradingSession()
-        if (resolve) resolve()
+        if (resolve) resolve() // Resolve the connection promise
       } else if (message.res && message.res[1] === "auth_failure") {
         console.error("❌ YellowTradingService: Authentication failed:", message.res[2])
         if (reject) reject(new Error(`Authentication failed: ${JSON.stringify(message.res[2])}`))
@@ -289,35 +251,34 @@ class YellowTradingService {
         console.error("❌ YellowTradingService: Received error message:", message.err)
         if (reject) reject(new Error(`ClearNode error: ${message.err[1]} - ${message.err[2]}`))
       } else {
-        console.log("ℹ️ YellowTradingService: Unhandled message type:", messageType)
-        console.log("📋 YellowTradingService: Full message:", message)
+        console.log("ℹ️ YellowTradingService: Unhandled message type:", message)
       }
     } catch (error) {
       console.error("💥 YellowTradingService: Error handling message:", error)
     }
   }
 
-  // Enhanced auth challenge handler
-  private async handleAuthChallenge(message: any, rawData: string): Promise<void> {
+  // Corrected auth challenge handler with proper EIP-712 signing
+  private async handleAuthChallenge(message: any): Promise<void> {
     if (!this.stateWallet || !this.ws) return
 
     try {
       console.log("🔐 YellowTradingService: Processing auth challenge...")
-      console.log("📋 YellowTradingService: Challenge message structure:", message)
+      console.log("📋 YellowTradingService: Challenge message:", message)
 
       // Extract challenge from the message
       const challengeData = message.res[2][0]
       if (!challengeData || !challengeData.challenge_message) {
-        throw new Error("Invalid challenge format - missing challenge_message")
+        throw new Error("Invalid challenge format")
       }
 
       const challenge = challengeData.challenge_message
       console.log("🎯 YellowTradingService: Extracted challenge:", challenge)
 
-      // Create EIP-712 message signer function
+      // Create EIP-712 message signer function as per documentation
       const eip712MessageSigner = async (payload: any) => {
         try {
-          console.log("✍️ YellowTradingService: Creating EIP-712 signature...")
+          console.log("✍️ YellowTradingService: Signing EIP-712 message...")
 
           // Create the message structure as per documentation
           const messageToSign = {
@@ -341,7 +302,7 @@ class YellowTradingService {
             messageToSign,
           )
 
-          console.log("✅ YellowTradingService: EIP-712 signature created")
+          console.log("✅ YellowTradingService: EIP-712 signature created:", signature.substring(0, 20) + "...")
           return signature
         } catch (error) {
           console.error("💥 YellowTradingService: Error signing EIP-712 message:", error)
@@ -349,10 +310,10 @@ class YellowTradingService {
         }
       }
 
-      // Create auth verify message
+      // Create auth verify message using the corrected signer
       const authVerify = await createAuthVerifyMessage(
         eip712MessageSigner,
-        rawData, // Pass the raw message data
+        data, // Pass the raw message data
         this.stateWallet.address,
       )
 
@@ -385,7 +346,7 @@ class YellowTradingService {
       // Define trading session parameters
       const appDefinition = {
         protocol: "nitroliterpc",
-        participants: [this.stateWallet.address, this.stateWallet.address],
+        participants: [this.stateWallet.address, this.stateWallet.address], // Self-trading for demo
         weights: [100, 0],
         quorum: 100,
         challenge: 0,
@@ -396,7 +357,7 @@ class YellowTradingService {
         {
           participant: this.stateWallet.address,
           asset: "usdc",
-          amount: "1000000",
+          amount: "1000000", // 1000 USDC with 6 decimals
         },
       ]
 
@@ -422,7 +383,7 @@ class YellowTradingService {
         this.currentSession = {
           appSessionId,
           participantA: this.stateWallet!.address,
-          participantB: this.stateWallet!.address,
+          participantB: this.stateWallet!.address, // Self-trading for demo
           status: "active",
           positions: [],
         }
@@ -445,12 +406,13 @@ class YellowTradingService {
   ): Promise<Position | null> {
     console.log("📈 YellowTradingService: Attempting to open position:", { tokenSymbol, type, usdcAmount, entryPrice })
 
-    if (this.isDemoMode) {
-      console.log("🎮 YellowTradingService: Opening position in DEMO MODE")
-    }
-
     if (!this.isAuthenticated || !this.currentSession) {
       console.error("❌ YellowTradingService: Cannot open position - not authenticated or no session")
+      console.log("📊 YellowTradingService: Current status:", {
+        isAuthenticated: this.isAuthenticated,
+        hasSession: !!this.currentSession,
+        isConnected: this.isConnected,
+      })
       return null
     }
 
@@ -468,6 +430,7 @@ class YellowTradingService {
         status: "open",
       }
 
+      // Store position
       this.positions.set(position.id, position)
       this.currentSession.positions.push(position)
       this.savePositionsToStorage()
@@ -488,12 +451,14 @@ class YellowTradingService {
     }
 
     try {
+      // Calculate final P&L
       const pnl = this.calculatePnL(position, currentPrice)
+
       position.status = "closed"
       position.currentPrice = currentPrice
       position.pnl = pnl
-      this.savePositionsToStorage()
 
+      this.savePositionsToStorage()
       console.log(`✅ YellowTradingService: Closed position ${positionId} with P&L: ${pnl}`)
       return true
     } catch (error) {
@@ -567,6 +532,12 @@ class YellowTradingService {
   // Check if service is ready for trading
   isReady(): boolean {
     const ready = this.isConnected && this.isAuthenticated && this.currentSession !== null
+    console.log("🎯 YellowTradingService: isReady check:", {
+      isConnected: this.isConnected,
+      isAuthenticated: this.isAuthenticated,
+      hasSession: !!this.currentSession,
+      result: ready,
+    })
     return ready
   }
 
@@ -579,20 +550,11 @@ class YellowTradingService {
     }
   }
 
-  // Check if running in demo mode
-  isDemoModeActive(): boolean {
-    return this.isDemoMode
-  }
-
   // Disconnect from ClearNode
   disconnect(): void {
     if (this.authTimeout) {
       clearTimeout(this.authTimeout)
       this.authTimeout = null
-    }
-    if (this.connectionTimeout) {
-      clearTimeout(this.connectionTimeout)
-      this.connectionTimeout = null
     }
     if (this.ws) {
       this.ws.close()
