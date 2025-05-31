@@ -41,7 +41,7 @@ After initializing your client and creating a channel, you need to establish a W
 <Tabs>
   <TabItem value="basic" label="WebSocket Connection">
 
-```javascript
+\`\`\`javascript
 // Import your preferred WebSocket library
 import WebSocket from 'ws'; // Node.js
 // or use the browser's built-in WebSocket
@@ -68,12 +68,12 @@ ws.onerror = (error) => {
 ws.onclose = (event) => {
   console.log(`WebSocket closed: ${event.code} ${event.reason}`);
 };
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="advanced" label="With Reconnection Logic">
 
-```javascript
+\`\`\`javascript
 class ClearNodeConnection {
   constructor(url) {
     this.url = url;
@@ -218,7 +218,7 @@ clearNodeConnection.on('connected', () => {
 
 // Later, when you're done
 clearNodeConnection.disconnect();
-```
+\`\`\`
 
   </TabItem>
 </Tabs>
@@ -236,7 +236,7 @@ When connecting to a ClearNode, you need to follow a specific authentication flo
 
 This flow ensures that only authorized participants with valid signing keys can connect to the ClearNode and participate in channel operations.
 
-```mermaid
+\`\`\`mermaid
 sequenceDiagram
     participant Client as Your Application
     participant CN as ClearNode
@@ -263,12 +263,12 @@ sequenceDiagram
         CN->>Client: Send auth_failure
         Note over Client,CN: Connection remains but unauthorized
     end
-```
+\`\`\`
 
 <Tabs>
   <TabItem value="auth" label="Authentication Process">
 
-```javascript
+\`\`\`javascript
 import { createAuthRequestMessage, createAuthVerifyMessage } from '@erc7824/nitrolite';
 import { ethers } from 'ethers';
 
@@ -358,12 +358,12 @@ ws.onmessage = async (event) => {
     console.error('Error handling message:', error);
   }
 };
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="challenge" label="Manual Challenge Handling">
 
-```javascript
+\`\`\`javascript
 import { 
   createAuthRequestMessage, 
   createAuthVerifyMessageFromChallenge,
@@ -452,12 +452,12 @@ ws.onmessage = async (event) => {
     console.error('Error handling message:', error);
   }
 };
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="reconnect" label="Reconnect">
 
-```javascript
+\`\`\`javascript
 import { createAuthVerifyMessageWithJWT } from '@erc7824/nitrolite';
 import { ethers } from 'ethers';
 
@@ -493,7 +493,7 @@ ws.onmessage = async (event) => {
     console.error('Error handling message:', error);
   }
 };
-```
+\`\`\`
 
   </TabItem>
 </Tabs>
@@ -504,7 +504,7 @@ In the authentication process, the client must sign messages using EIP-712 struc
 
 The format of the EIP-712 message is as follows:
 
-```javascript
+\`\`\`javascript
 {
   "types": {
     "EIP712Domain": [
@@ -539,13 +539,13 @@ The format of the EIP-712 message is as follows:
     allowances: []
   }
 }
-```
+\`\`\`
 
 ## Getting Channel Information
 
 After authenticating with a ClearNode, you can request information about your channels. This is useful to verify your connection is working correctly and to retrieve channel data.
 
-```javascript
+\`\`\`javascript
 import { createGetChannelsMessage } from '@erc7824/nitrolite';
 
 // Example of using the function after authentication is complete
@@ -601,13 +601,13 @@ ws.addEventListener('message', async (event) => {
     }
   }
 });
-```
+\`\`\`
 
 ### Response Format
 
 The response to a `get_channels` request includes detailed information about each channel:
 
-```javascript
+\`\`\`javascript
 {
   "res": [1, "get_channels", [[  // Notice the nested array structure
     {
@@ -627,7 +627,7 @@ The response to a `get_channels` request includes detailed information about eac
   ]], 1619123456789],
   "sig": ["0xabcd1234..."]
 }
-```
+\`\`\`
 
 ## Framework-Specific Integration
 
@@ -636,7 +636,7 @@ Here are examples of integrating ClearNode WebSocket connections with various fr
 <Tabs>
   <TabItem value="react" label="React">
 
-```javascript
+\`\`\`javascript
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { 
@@ -865,12 +865,12 @@ function ClearNodeComponent() {
     </div>
   );
 }
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="angular" label="Angular">
 
-```typescript
+\`\`\`typescript
 // In an Angular service (clearnode.service.ts)
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
@@ -1116,12 +1116,12 @@ export class ClearNodeComponent implements OnInit, OnDestroy {
     this.clearNodeService.getChannels(this.stateWallet);
   }
 }
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="vue" label="Vue">
 
-```javascript
+\`\`\`javascript
 // In a Vue component or Composable
 import { ref, onMounted, onUnmounted } from 'vue';
 import { ethers } from 'ethers';
@@ -1346,12 +1346,12 @@ export default {
     };
   }
 };
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="nodejs" label="Node.js">
 
-```javascript
+\`\`\`javascript
 const WebSocket = require('ws');
 const { ethers } = require('ethers');
 const { 
@@ -1757,7 +1757,7 @@ process.on('SIGINT', () => {
 
 // Run the example
 main().catch(console.error);
-```
+\`\`\`
 
   </TabItem>
 </Tabs>
@@ -1830,7 +1830,7 @@ The `get_ledger_balances` request is used to retrieve the current off-chain bala
 
 The response contains a list of assets and their amounts for the specified participant. The balances are represented as strings with decimal precision, making it easier to display them directly without additional conversion.
 
-```javascript
+\`\`\`javascript
 // Example response format for get_ledger_balances
 {
   "res": [1, "get_ledger_balances", [[  // The nested array contains balance data
@@ -1845,14 +1845,14 @@ The response contains a list of assets and their amounts for the specified parti
   ]], 1619123456789],  // Timestamp
   "sig": ["0xabcd1234..."]
 }
-```
+\`\`\`
 
 To retrieve these balances, use the `get_ledger_balances` request with the ClearNode:
 
 <Tabs>
   <TabItem value="using-helper" label="Using SDK Helper">
 
-```javascript
+\`\`\`javascript
 import { createGetLedgerBalancesMessage } from '@erc7824/nitrolite';
 import { ethers } from 'ethers';
 
@@ -1939,12 +1939,12 @@ try {
 } catch (error) {
   console.error('Failed to get ledger balances:', error);
 }
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="manual" label="Manual Request">
 
-```javascript
+\`\`\`javascript
 import { ethers } from 'ethers';
 import { generateRequestId, getCurrentTimestamp } from '@erc7824/nitrolite';
 
@@ -2026,7 +2026,7 @@ try {
 } catch (error) {
   console.error('Failed to get ledger balances:', error);
 }
-```
+\`\`\`
 
   </TabItem>
 </Tabs>
@@ -2035,7 +2035,7 @@ try {
 
 To retrieve off-chain balances for a participant, use the `createGetLedgerBalancesMessage` helper function:
 
-```javascript
+\`\`\`javascript
 import { createGetLedgerBalancesMessage } from '@erc7824/nitrolite';
 import { ethers } from 'ethers';
 
@@ -2104,13 +2104,13 @@ getLedgerBalances(ws, participantAddress, messageSigner)
   .catch(error => {
     console.error('Failed to get ledger balances:', error);
   });
-```
+\`\`\`
 
 ## Processing Balance Data
 
 When you receive balance data from the ClearNode, it's helpful to format it for better readability:
 
-```javascript
+\`\`\`javascript
 // Simple function to format your balance data for display
 function formatMyBalances(balances) {
   if (!balances || !balances[0] || !Array.isArray(balances[0]) || balances[0].length === 0) {
@@ -2140,7 +2140,7 @@ if (myFormattedBalances && myFormattedBalances.length > 0) {
 } else {
   console.log('No balance data available');
 }
-```
+\`\`\`
 
 ## Best Practices for Balance Checking
 
@@ -2150,7 +2150,7 @@ When working with off-chain balances, follow these best practices:
 
 Set up a regular interval to check balances, especially in active applications:
 
-```javascript
+\`\`\`javascript
 // Simple balance monitoring function
 function startBalanceMonitoring(ws, participantAddress, messageSigner, intervalMs = 30000) {
   // Check immediately on start
@@ -2185,7 +2185,7 @@ function displayBalances(balances) {
     console.log('No balance data available');
   }
 }
-```
+\`\`\`
 
 ## Common Errors and Troubleshooting
 
@@ -2223,12 +2223,12 @@ After connecting to a ClearNode and checking your channel balances, you can crea
 
 ## Understanding Application Sessions
 
-```mermaid
+\`\`\`mermaid
 graph TD
     A[Create Application Session] --> B[Session Active]
     B --> C[Off-Chain Transactions]
     C --> D[Close Session]
-```
+\`\`\`
 
 Application sessions in Nitrolite allow you to:
 
@@ -2246,7 +2246,7 @@ To create an application session, you'll use the `createAppSessionMessage` helpe
 <Tabs>
   <TabItem value="react" label="React">
 
-```javascript
+\`\`\`javascript
 import { createAppSessionMessage } from '@erc7824/nitrolite';
 import { useCallback } from 'react';
 
@@ -2373,12 +2373,12 @@ function MyComponent() {
     <button onClick={handleCreateSession}>Create Application Session</button>
   );
 }
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="angular" label="Angular">
 
-```typescript
+\`\`\`typescript
 // app-session.service.ts
 import { Injectable } from '@angular/core';
 import { createAppSessionMessage } from '@erc7824/nitrolite';
@@ -2628,12 +2628,12 @@ export class AppSessionComponent implements OnInit {
     });
   }
 }
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="vue" label="Vue.js">
 
-```javascript
+\`\`\`javascript
 <!-- AppSessionManager.vue -->
 <template>
   <div class="app-session-manager">
@@ -2880,12 +2880,12 @@ button:disabled {
   cursor: not-allowed;
 }
 </style>
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="nodejs" label="Node.js">
 
-```javascript
+\`\`\`javascript
 import { createAppSessionMessage } from '@erc7824/nitrolite';
 import WebSocket from 'ws';
 import { ethers } from 'ethers';
@@ -3022,12 +3022,12 @@ createAppSession(participantA, participantB, ws, wallet)
   .catch(error => {
     console.error('Failed to create application session:', error);
   });
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="server" label="Server with Multiple Players">
 
-```javascript
+\`\`\`javascript
 /**
  * Nitrolite app sessions manager for game rooms
  */
@@ -3193,7 +3193,7 @@ export function getAppSession(roomId) {
 export function hasAppSession(roomId) {
   return roomAppSessions.has(roomId);
 }
-```
+\`\`\`
 
   </TabItem>
 </Tabs>
@@ -3228,7 +3228,7 @@ When a ClearNode responds to your application session creation request, it provi
 
 When you create an application session, the ClearNode responds with information about the created session:
 
-```javascript
+\`\`\`javascript
 // Example response
 {
   "res": [
@@ -3244,7 +3244,7 @@ When you create an application session, the ClearNode responds with information 
   ],
   "sig": ["0xSignature"]
 }
-```
+\`\`\`
 
 The most important part of the response is the `app_session_id`, which you'll need for all future interactions with this application session.
 
@@ -3304,13 +3304,13 @@ Closing an application session correctly is important because it:
 - Ensures the proper completion of all operations
 - Prevents potential disputes
 
-```mermaid
+\`\`\`mermaid
 graph TD
     A[Active Session] --> B[Define Final Allocations]
     B --> C[Sign Close Message]
     C --> D[Send to ClearNode]
     D --> E[Session Closed]
-```
+\`\`\`
 
 ## Closing an Application Session
 
@@ -3319,7 +3319,7 @@ To close an application session, you'll use the `createCloseAppSessionMessage` h
 <Tabs>
   <TabItem value="react" label="React">
 
-```javascript
+\`\`\`javascript
 import { useCallback } from 'react';
 import { createCloseAppSessionMessage } from '@erc7824/nitrolite';
 
@@ -3461,12 +3461,12 @@ function MyComponent() {
     <button onClick={handleCloseSession}>Close Application Session</button>
   );
 }
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="angular" label="Angular">
 
-```typescript
+\`\`\`typescript
 // app-session.service.ts
 import { Injectable } from '@angular/core';
 import { createCloseAppSessionMessage } from '@erc7824/nitrolite';
@@ -3759,12 +3759,12 @@ export class AppSessionCloseComponent implements OnInit {
     });
   }
 }
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="vue" label="Vue.js">
 
-```javascript
+\`\`\`javascript
 <!-- AppSessionClose.vue -->
 <template>
   <div class="app-session-closer">
@@ -4071,12 +4071,12 @@ button:disabled {
   cursor: not-allowed;
 }
 </style>
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="nodejs" label="Node.js">
 
-```javascript
+\`\`\`javascript
 import { createCloseAppSessionMessage } from '@erc7824/nitrolite';
 import { ethers } from 'ethers';
 
@@ -4210,12 +4210,12 @@ closeAppSession(appId, participantA, participantB, amount, ws, wallet)
   .catch(error => {
     console.error('Failed to close application session:', error);
   });
-```
+\`\`\`
 
   </TabItem>
   <TabItem value="server" label="Server with Multiple Players">
 
-```javascript
+\`\`\`javascript
 /**
  * Close an app session for a game room
  * @param {string} roomId - Room ID
@@ -4346,7 +4346,7 @@ export async function closeAppSession(roomId, participantA, participantB, partic
     return false;
   }
 }
-```
+\`\`\`
 
   </TabItem>
 </Tabs>
@@ -4355,7 +4355,7 @@ export async function closeAppSession(roomId, participantA, participantB, partic
 
 The following sequence diagram shows the interaction between your application and the ClearNode when closing a session:
 
-```mermaid
+\`\`\`mermaid
 sequenceDiagram
     participant App as Your Application
     participant CN as ClearNode
@@ -4363,7 +4363,7 @@ sequenceDiagram
     App->>CN: Send close_app_session request
     CN->>App: Return success response
     App->>App: Clean up local storage
-```
+\`\`\`
 
 ## Understanding Final Allocations
 
@@ -4376,7 +4376,7 @@ When closing an application session, you must specify the final allocations of f
 
 Examples:
 
-```javascript
+\`\`\`javascript
 // Initial allocations when creating the session:
 // [
 //   { participant: participantA, asset: "usdc", amount: "1000000" },
@@ -4400,13 +4400,13 @@ const allocations = [
   { participant: participantA, asset: "usdc", amount: "700000" },
   { participant: participantB, asset: "usdc", amount: "300000" }
 ]; // Split 70/30
-```
+\`\`\`
 
 ## Understanding the Close Session Response
 
 When you close an application session, the ClearNode responds with information about the closed session:
 
-```javascript
+\`\`\`javascript
 // Example response
 {
   "res": [
@@ -4422,7 +4422,7 @@ When you close an application session, the ClearNode responds with information a
   ],
   "sig": ["0xSignature"]
 }
-```
+\`\`\`
 
 ## Response Components
 
@@ -4512,23 +4512,23 @@ You can install Nitrolite using your preferred package manager:
 <Tabs>
   <TabItem value="npm" label="npm">
 
-  ```bash
+  \`\`\`bash
   npm install @erc7824/nitrolite
-  ```
+  \`\`\`
 
   </TabItem>
   <TabItem value="yarn" label="yarn">
 
-  ```bash
+  \`\`\`bash
   yarn add @erc7824/nitrolite
-  ```
+  \`\`\`
 
   </TabItem>
   <TabItem value="pnpm" label="pnpm">
 
-  ```bash
+  \`\`\`bash
   pnpm add @erc7824/nitrolite
-  ```
+  \`\`\`
 
   </TabItem>
 </Tabs>
@@ -4546,13 +4546,13 @@ We have generated a [llms-full.txt](https://erc7824.org/llms-full.txt) file that
 
 ## Complete Workflow
 
-```mermaid
+\`\`\`mermaid
 graph TD
     A[Initialize Channel] --> B[Connect to ClearNode]
     B --> C[Create Application Session]
     C --> D[Perform Operations]
     D --> E[Close Session]
-```
+\`\`\`
 
 ## Next steps
 

@@ -1,10 +1,11 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef } from "react"
 import { Card } from "@/components/ui/card"
-import { X, Heart, DollarSign, TrendingUp, BarChart3, Trophy } from "lucide-react"
+import { X, Heart, DollarSign, TrendingUp, BarChart3, Trophy, RefreshCw } from "lucide-react"
+import { useEthereumData, usePumpTokenData, useFlowToken1Data } from "@/hooks/useTokenData"
+import { geckoTerminalService } from "@/services/geckoTerminalService"
 import type { Token } from "@/lib/types"
 
 interface TokenCardProps {
@@ -18,6 +19,50 @@ export default function TokenCard({ token, onSwipe }: TokenCardProps) {
   const [rotation, setRotation] = useState(0)
   const cardRef = useRef<HTMLDivElement>(null)
   const startPos = useRef({ x: 0, y: 0 })
+
+  // Use different hooks based on token symbol
+  const { data: ethData, loading: ethLoading, error: ethError, refetch: ethRefetch } = useEthereumData()
+  const { data: pumpData, loading: pumpLoading, error: pumpError, refetch: pumpRefetch } = usePumpTokenData()
+  const { data: flow1Data, loading: flow1Loading, error: flow1Error, refetch: flow1Refetch } = useFlowToken1Data()
+
+  // Determine which data to use based on token symbol
+  let tokenData = null
+  let loading = false
+  let error = null
+  let refetch = () => Promise.resolve()
+
+  if (token.symbol === "ETH") {
+    tokenData = ethData
+    loading = ethLoading
+    error = ethError
+    refetch = ethRefetch
+  } else if (token.symbol === "PUMP") {
+    tokenData = pumpData
+    loading = pumpLoading
+    error = pumpError
+    refetch = pumpRefetch
+  } else if (token.symbol === "FLOW1") {
+    tokenData = flow1Data
+    loading = flow1Loading
+    error = flow1Error
+    refetch = flow1Refetch
+  }
+
+  console.log(`TokenCard for ${token.symbol}:`, { tokenData, loading, error })
+
+  // Update token data with real data if available
+  const displayToken = tokenData
+    ? {
+        ...token,
+        name: tokenData.name,
+        price: geckoTerminalService.formatPrice(tokenData.price),
+        change24h: tokenData.change24h,
+        volume24h: geckoTerminalService.formatNumber(tokenData.volume24h),
+        marketCap: geckoTerminalService.formatNumber(tokenData.marketCap),
+      }
+    : token
+
+  const currentPrice = tokenData ? tokenData.price : Number.parseFloat(token.price)
 
   const handleStart = (clientX: number, clientY: number) => {
     setIsDragging(true)
@@ -66,6 +111,19 @@ export default function TokenCard({ token, onSwipe }: TokenCardProps) {
     handleMove(touch.clientX, touch.clientY)
   }
 
+  if (loading) {
+    return (
+      <Card className="w-full bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
+        <div className="p-6 flex items-center justify-center">
+          <div className="text-center">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400" />
+            <p className="text-gray-600">Loading {token.symbol} data...</p>
+          </div>
+        </div>
+      </Card>
+    )
+  }
+
   const getOverlayColor = () => {
     if (dragOffset.x > 50) return "bg-green-500/20"
     if (dragOffset.x < -50) return "bg-red-500/20"
@@ -77,6 +135,9 @@ export default function TokenCard({ token, onSwipe }: TokenCardProps) {
     if (dragOffset.x < -50) return "SELL"
     return ""
   }
+
+  // Helper function to determine if price is very small
+  const isVerySmallPrice = tokenData && tokenData.price < 0.01
 
   return (
     <div className="relative">
@@ -115,19 +176,32 @@ export default function TokenCard({ token, onSwipe }: TokenCardProps) {
                 {token.symbol.slice(0, 2)}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{token.name}</h2>
-                <p className="text-gray-600">{token.symbol}</p>
+                <h2 className="text-xl font-bold text-gray-900">{displayToken.name}</h2>
+                <p className="text-gray-600">{displayToken.symbol}</p>
+                {tokenData && (
+                  <p className="text-xs text-gray-500">
+                    Updated: {new Date(tokenData.lastUpdated).toLocaleTimeString()}
+                  </p>
+                )}
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-gray-900">${token.price}</p>
+              <div className="flex flex-col items-end">
+                <p className={`font-bold text-gray-900 ${isVerySmallPrice ? "text-lg" : "text-2xl"}`}>
+                  ${displayToken.price}
+                </p>
+                {isVerySmallPrice && <p className="text-xs text-gray-500 mt-1">Micro-cap token</p>}
+              </div>
               <p
-                className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                  token.change24h >= 0 ? "text-green-600 bg-green-100" : "text-red-600 bg-red-100"
+                className={`text-sm font-semibold px-2 py-1 rounded-full mt-2 ${
+                  displayToken.change24h >= 0 ? "text-green-600 bg-green-100" : "text-red-600 bg-red-100"
                 }`}
               >
-                {token.change24h >= 0 ? "+" : ""}
-                {token.change24h}%
+                {displayToken.change24h >= 0 ? "+" : ""}
+                {typeof displayToken.change24h === "number"
+                  ? displayToken.change24h.toFixed(2)
+                  : displayToken.change24h}
+                %
               </p>
             </div>
           </div>
@@ -148,12 +222,12 @@ export default function TokenCard({ token, onSwipe }: TokenCardProps) {
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-green-50 p-3 rounded-lg text-center">
                 <BarChart3 className="w-5 h-5 text-green-600 mx-auto mb-1" />
-                <p className="text-sm font-bold text-gray-900">${token.volume24h}</p>
+                <p className="text-sm font-bold text-gray-900">${displayToken.volume24h}</p>
                 <p className="text-xs text-gray-600">24h Vol</p>
               </div>
               <div className="bg-blue-50 p-3 rounded-lg text-center">
                 <TrendingUp className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                <p className="text-sm font-bold text-gray-900">${token.marketCap}</p>
+                <p className="text-sm font-bold text-gray-900">${displayToken.marketCap}</p>
                 <p className="text-xs text-gray-600">Market Cap</p>
               </div>
               <div className="bg-purple-50 p-3 rounded-lg text-center">
