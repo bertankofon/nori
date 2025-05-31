@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Wallet, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
+import { Wallet, AlertCircle, CheckCircle, Loader2, ExternalLink, Info } from "lucide-react"
 import { useTrading } from "@/contexts/TradingContext"
 
 export default function TradingSetup() {
@@ -59,6 +59,28 @@ export default function TradingSetup() {
             <p className="text-gray-600">Initialize your Yellow trading session to start opening positions</p>
           </div>
 
+          {/* Channel Setup Notice */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-blue-900 mb-1">Channel Required</p>
+                <p className="text-blue-700 mb-2">
+                  To use real ClearNode features, you need to create a channel first.
+                </p>
+                <a
+                  href="https://apps.yellow.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Create Channel at apps.yellow.com
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Private Key</label>
@@ -106,8 +128,9 @@ export default function TradingSetup() {
               </Button>
             </div>
 
-            <div className="text-xs text-gray-500 text-center">
+            <div className="text-xs text-gray-500 text-center space-y-1">
               <p>⚠️ Demo mode simulates trading without real transactions</p>
+              <p>🔗 ClearNode connection will fall back to demo if no channel exists</p>
             </div>
           </div>
 
@@ -157,17 +180,6 @@ export default function TradingSetup() {
 
           <div className="text-xs text-gray-500 text-center">
             <p>⚠️ This is a demo. Never use real private keys in production.</p>
-            <p>
-              Create your channel at{" "}
-              <a
-                href="https://apps.yellow.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                apps.yellow.com
-              </a>
-            </p>
           </div>
         </div>
       </Card>
