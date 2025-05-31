@@ -11,7 +11,7 @@ export default function TradingSetup() {
   const [privateKey, setPrivateKey] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const { initializeTrading, status } = useTrading()
+  const { initializeTrading, status, setIsInitialized } = useTrading()
 
   const handleInitialize = async () => {
     if (!privateKey.trim()) {
@@ -23,11 +23,15 @@ export default function TradingSetup() {
     setError("")
 
     try {
+      console.log("🚀 TradingSetup: Starting initialization process...")
       const success = await initializeTrading(privateKey)
+      console.log("📊 TradingSetup: Initialization result:", success)
+
       if (!success) {
-        setError("Failed to initialize trading service")
+        setError("Failed to initialize trading service. Check console for details.")
       }
     } catch (err) {
+      console.error("💥 TradingSetup: Initialization error:", err)
       setError(err instanceof Error ? err.message : "Unknown error occurred")
     } finally {
       setIsLoading(false)
@@ -38,6 +42,11 @@ export default function TradingSetup() {
     // Generate a random private key for demo purposes
     const randomKey = "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("")
     setPrivateKey(randomKey)
+  }
+
+  const handleDemoMode = () => {
+    console.log("🎮 TradingSetup: Activating demo mode...")
+    setIsInitialized(true)
   }
 
   return (
@@ -76,20 +85,30 @@ export default function TradingSetup() {
               </div>
             )}
 
-            <Button
-              onClick={handleInitialize}
-              disabled={isLoading || !privateKey.trim()}
-              className="w-full bg-yellow-600 hover:bg-yellow-700"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Initializing...
-                </>
-              ) : (
-                "Initialize Trading"
-              )}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={handleInitialize}
+                disabled={isLoading || !privateKey.trim()}
+                className="w-full bg-yellow-600 hover:bg-yellow-700"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Initializing...
+                  </>
+                ) : (
+                  "Initialize Trading"
+                )}
+              </Button>
+
+              <Button onClick={handleDemoMode} variant="outline" className="w-full">
+                Skip Setup (Demo Mode)
+              </Button>
+            </div>
+
+            <div className="text-xs text-gray-500 text-center">
+              <p>⚠️ Demo mode simulates trading without real transactions</p>
+            </div>
           </div>
 
           <div className="space-y-2 text-sm">

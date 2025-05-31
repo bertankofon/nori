@@ -20,6 +20,8 @@ interface TradingContextType {
   updateTokenPrice: (tokenSymbol: string, price: number) => void
   getPositionsForToken: (tokenSymbol: string) => Position[]
   status: { connected: boolean; authenticated: boolean; sessionActive: boolean }
+  // Add this for debugging
+  setIsInitialized: (value: boolean) => void
 }
 
 const TradingContext = createContext<TradingContextType | undefined>(undefined)
@@ -28,6 +30,11 @@ export function TradingProvider({ children }: { children: ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false)
   const [positions, setPositions] = useState<Position[]>([])
   const [totalPnL, setTotalPnL] = useState(0)
+
+  // Add debug logging for state changes
+  useEffect(() => {
+    console.log("TradingContext - isInitialized changed to:", isInitialized)
+  }, [isInitialized])
 
   // Memoize the update functions to prevent infinite re-renders
   const updatePositions = useCallback((): void => {
@@ -45,14 +52,37 @@ export function TradingProvider({ children }: { children: ReactNode }) {
     [updatePositions],
   )
 
-  // Initialize trading service
+  // Initialize trading service with detailed logging
   const initializeTrading = useCallback(async (privateKey: string): Promise<boolean> => {
     try {
+      console.log("🚀 TradingContext: Starting trading initialization...")
+
+      // Validate private key format
+      if (!privateKey || privateKey.length < 64) {
+        console.error("❌ TradingContext: Invalid private key format")
+        return false
+      }
+
+      console.log("🔑 TradingContext: Private key validated, calling yellowTradingService.initialize...")
       const success = await yellowTradingService.initialize(privateKey)
-      setIsInitialized(success)
+      console.log("📊 TradingContext: yellowTradingService.initialize returned:", success)
+
+      if (success) {
+        console.log("✅ TradingContext: Setting isInitialized to true")
+        setIsInitialized(true)
+
+        // Double-check the service status
+        const status = yellowTradingService.getStatus()
+        const isReady = yellowTradingService.isReady()
+        console.log("📈 TradingContext: Service status after init:", status)
+        console.log("🎯 TradingContext: Service isReady:", isReady)
+      } else {
+        console.log("❌ TradingContext: Initialization failed, keeping isInitialized as false")
+      }
+
       return success
     } catch (error) {
-      console.error("Failed to initialize trading:", error)
+      console.error("💥 TradingContext: Failed to initialize trading:", error)
       return false
     }
   }, [])
@@ -66,9 +96,13 @@ export function TradingProvider({ children }: { children: ReactNode }) {
       amount: number,
       price: number,
     ): Promise<Position | null> => {
+      console.log("📈 TradingContext: Opening position:", { tokenSymbol, type, amount, price })
       const position = await yellowTradingService.openPosition(tokenSymbol, tokenName, type, amount, price)
       if (position) {
+        console.log("✅ TradingContext: Position opened successfully:", position)
         updatePositions()
+      } else {
+        console.log("❌ TradingContext: Failed to open position")
       }
       return position
     },
@@ -92,9 +126,14 @@ export function TradingProvider({ children }: { children: ReactNode }) {
     return yellowTradingService.getPositionsForToken(tokenSymbol)
   }, [])
 
-  // Get service status
+  // Get service status with logging
   const status = yellowTradingService.getStatus()
   const isReady = yellowTradingService.isReady()
+
+  // Log status changes
+  useEffect(() => {
+    console.log("📊 TradingContext: Status update:", { status, isReady, isInitialized })
+  }, [status.connected, status.authenticated, status.sessionActive, isReady, isInitialized])
 
   // Update positions periodically - only run once
   useEffect(() => {
@@ -105,6 +144,7 @@ export function TradingProvider({ children }: { children: ReactNode }) {
   // Load initial positions - only run once when initialized
   useEffect(() => {
     if (isInitialized) {
+      console.log("🔄 TradingContext: isInitialized is true, updating positions...")
       updatePositions()
     }
   }, [isInitialized, updatePositions])
@@ -122,6 +162,7 @@ export function TradingProvider({ children }: { children: ReactNode }) {
         updateTokenPrice,
         getPositionsForToken,
         status,
+        setIsInitialized, // Add this for debugging
       }}
     >
       {children}
