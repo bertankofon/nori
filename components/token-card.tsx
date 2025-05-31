@@ -7,13 +7,15 @@ import { X, Heart, DollarSign, TrendingUp, BarChart3, Trophy, RefreshCw } from "
 import { useEthereumData, usePumpTokenData, useFlowToken1Data } from "@/hooks/useTokenData"
 import { geckoTerminalService } from "@/services/geckoTerminalService"
 import type { Token } from "@/lib/types"
+import { useTrading } from "@/contexts/TradingContext"
 
 interface TokenCardProps {
   token: Token
   onSwipe: (direction: "left" | "right", tokenSymbol: string) => void
+  isReady?: boolean
 }
 
-export default function TokenCard({ token, onSwipe }: TokenCardProps) {
+export default function TokenCard({ token, onSwipe, isReady = false }: TokenCardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [rotation, setRotation] = useState(0)
@@ -24,6 +26,9 @@ export default function TokenCard({ token, onSwipe }: TokenCardProps) {
   const { data: ethData, loading: ethLoading, error: ethError, refetch: ethRefetch } = useEthereumData()
   const { data: pumpData, loading: pumpLoading, error: pumpError, refetch: pumpRefetch } = usePumpTokenData()
   const { data: flow1Data, loading: flow1Loading, error: flow1Error, refetch: flow1Refetch } = useFlowToken1Data()
+
+  // Add this line after the existing hooks
+  const { status } = useTrading()
 
   // Determine which data to use based on token symbol
   let tokenData = null
@@ -187,6 +192,13 @@ export default function TokenCard({ token, onSwipe }: TokenCardProps) {
             </div>
             <div className="text-right">
               <div className="flex flex-col items-end">
+                <div
+                  className={`text-xs px-2 py-1 rounded-full mb-2 ${
+                    isReady ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {isReady ? "Trading Ready" : "Setup Required"}
+                </div>
                 <p className={`font-bold text-gray-900 ${isVerySmallPrice ? "text-lg" : "text-2xl"}`}>
                   ${displayToken.price}
                 </p>

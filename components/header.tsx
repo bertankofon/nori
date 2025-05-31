@@ -1,16 +1,20 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useRef, useEffect } from "react"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, TrendingUp } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 interface HeaderProps {
   amount: string
   setAmount: (amount: string) => void
+  showPositions: boolean
+  setShowPositions: (show: boolean) => void
 }
 
-export default function Header({ amount, setAmount }: HeaderProps) {
+export default function Header({ amount, setAmount, showPositions, setShowPositions }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isCustom, setIsCustom] = useState(false)
   const [customValue, setCustomValue] = useState("")
@@ -46,12 +50,18 @@ export default function Header({ amount, setAmount }: HeaderProps) {
 
       <div className="flex items-center gap-2 relative" ref={dropdownRef}>
         <span className="text-black/70 text-lg">Amount:</span>
-        <button
-          className="flex items-center gap-2 text-black text-lg font-semibold"
-          onClick={() => setIsOpen(!isOpen)}
-        >
+        <button className="flex items-center gap-2 text-black text-lg font-semibold" onClick={() => setIsOpen(!isOpen)}>
           {amount}
           <ChevronDown className={cn("w-5 h-5 transition-transform", isOpen && "transform rotate-180")} />
+        </button>
+
+        {/* Add this after the amount dropdown */}
+        <button
+          className="ml-4 flex items-center gap-2 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg transition-colors"
+          onClick={() => setShowPositions(!showPositions)}
+        >
+          <TrendingUp className="w-5 h-5" />
+          <span className="text-sm font-medium">Positions</span>
         </button>
 
         {isOpen && (
@@ -88,10 +98,7 @@ export default function Header({ amount, setAmount }: HeaderProps) {
                     className="w-full rounded-r-none"
                     autoFocus
                   />
-                  <button
-                    type="submit"
-                    className="bg-yellow-500 text-white px-3 rounded-r-md"
-                  >
+                  <button type="submit" className="bg-yellow-500 text-white px-3 rounded-r-md">
                     Set
                   </button>
                 </div>
