@@ -46,8 +46,8 @@ export interface TokenData {
 export interface TokenConfig {
   network: string
   address: string
-  symbol: string
-  name: string
+  fallbackSymbol: string
+  fallbackName: string
 }
 
 class GeckoTerminalService {
@@ -57,115 +57,109 @@ class GeckoTerminalService {
     "Content-Type": "application/json",
   }
 
-  // Predefined token configurations
+  // Token configurations with addresses only - names and symbols will come from API
   private tokenConfigs: TokenConfig[] = [
     {
       network: "eth",
-      address: "0x0000000000000000000000000000000000000000", // Native ETH
-      symbol: "ETH",
-      name: "Ethereum",
+      address: "0x0000000000000000000000000000000000000000",
+      fallbackSymbol: "ETH",
+      fallbackName: "Ethereum",
     },
     {
       network: "flow-evm",
-      address: "0x6a64e027e3f6a94acbdcf39cf0cbb4bead5f5ecb", // Flow EVM Token 1
-      symbol: "FLOW1",
-      name: "Flow Token 1",
+      address: "0x6a64e027e3f6a94acbdcf39cf0cbb4bead5f5ecb",
+      fallbackSymbol: "FLOW1",
+      fallbackName: "Flow Token 1",
     },
     {
       network: "flow-evm",
-      address: "0x68eb683a393c8a1c816255b4fc4b89d73c52ad4b", // Flow EVM Token 2 (PUMP)
-      symbol: "PUMP",
-      name: "pump.flow",
+      address: "0x68eb683a393c8a1c816255b4fc4b89d73c52ad4b",
+      fallbackSymbol: "PUMP",
+      fallbackName: "pump.flow",
     },
     {
       network: "flow-evm",
-      address: "0x995258cea49c25595cd94407fad9e99b81406a84", // New Flow EVM Token 3
-      symbol: "FLOW2",
-      name: "Flow Token 2",
+      address: "0x995258cea49c25595cd94407fad9e99b81406a84",
+      fallbackSymbol: "FLOW2",
+      fallbackName: "Flow Token 2",
     },
     {
       network: "flow-evm",
-      address: "0xd8ad8ae8375aa31bff541e17dc4b4917014ebdaa", // New Flow EVM Token 4
-      symbol: "FLOW3",
-      name: "Flow Token 3",
+      address: "0xd8ad8ae8375aa31bff541e17dc4b4917014ebdaa",
+      fallbackSymbol: "FLOW3",
+      fallbackName: "Flow Token 3",
     },
     {
       network: "flow-evm",
-      address: "0x169bb04590fbf18b09739f951274aa5650dfccde", // New Flow EVM Token 5
-      symbol: "FLOW4",
-      name: "Flow Token 4",
+      address: "0x169bb04590fbf18b09739f951274aa5650dfccde",
+      fallbackSymbol: "FLOW4",
+      fallbackName: "Flow Token 4",
     },
-    // Solana tokens
     {
       network: "solana",
       address: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-      symbol: "SOL-1",
-      name: "Solana Token 1",
+      fallbackSymbol: "SOL1",
+      fallbackName: "Solana Token 1",
     },
     {
       network: "solana",
       address: "So11111111111111111111111111111111111111112",
-      symbol: "SOL",
-      name: "Wrapped SOL",
+      fallbackSymbol: "SOL",
+      fallbackName: "Wrapped SOL",
     },
     {
       network: "solana",
       address: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
-      symbol: "WIF",
-      name: "dogwifhat",
+      fallbackSymbol: "WIF",
+      fallbackName: "dogwifhat",
     },
-    // Avalanche tokens
     {
       network: "avax",
       address: "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
-      symbol: "WAVAX",
-      name: "Wrapped AVAX",
+      fallbackSymbol: "WAVAX",
+      fallbackName: "Wrapped AVAX",
     },
     {
       network: "avax",
       address: "0xffff003a6bad9b743d658048742935fffe2b6ed7",
-      symbol: "AVAX-1",
-      name: "Avalanche Token 1",
+      fallbackSymbol: "AVAX1",
+      fallbackName: "Avalanche Token 1",
     },
     {
       network: "avax",
       address: "0x420fca0121dc28039145009570975747295f2329",
-      symbol: "COQ",
-      name: "Coq Inu",
+      fallbackSymbol: "COQ",
+      fallbackName: "Coq Inu",
     },
-    // BSC tokens
     {
       network: "bsc",
       address: "0x55ad16bd573b3365f43a9daeb0cc66a73821b4a5",
-      symbol: "BSC-1",
-      name: "BSC Token 1",
+      fallbackSymbol: "BSC1",
+      fallbackName: "BSC Token 1",
     },
-    // Ethereum tokens
     {
       network: "eth",
       address: "0x6982508145454ce325ddbe47a25d4ec3d2311933",
-      symbol: "PEPE",
-      name: "Pepe",
+      fallbackSymbol: "PEPE",
+      fallbackName: "Pepe",
     },
     {
       network: "eth",
       address: "0x26e550ac11b26f78a04489d5f20f24e3559f7dd9",
-      symbol: "ETH-1",
-      name: "Ethereum Token 1",
+      fallbackSymbol: "ETH1",
+      fallbackName: "Ethereum Token 1",
     },
-    // Base tokens
     {
       network: "base",
       address: "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b",
-      symbol: "BASE-1",
-      name: "Base Token 1",
+      fallbackSymbol: "BASE1",
+      fallbackName: "Base Token 1",
     },
-    // Arbitrum tokens
     {
       network: "arbitrum",
       address: "0x912ce59144191c1204e64559fe8253a0e49e6548",
-      symbol: "ARB",
-      name: "Arbitrum",
+      fallbackSymbol: "ARB",
+      fallbackName: "Arbitrum",
     },
   ]
 
@@ -195,18 +189,21 @@ class GeckoTerminalService {
 
       const attrs = token.attributes
 
+      // Use the REAL name and symbol from the API response
+      const realSymbol = attrs.symbol || "UNKNOWN"
+      const realName = attrs.name || "Unknown Token"
+
       // Extract and parse the data with better precision for small numbers
       const priceString = attrs.price_usd || "0"
       const price = Number.parseFloat(priceString)
       const volume24h = Number.parseFloat(attrs.volume_usd?.h24 || "0")
       const marketCap = Number.parseFloat(attrs.market_cap_usd || attrs.fdv_usd || "0")
 
-      console.log(`Raw price string: "${priceString}"`)
-      console.log(`Parsed data - Price: ${price}, Volume: ${volume24h}, MarketCap: ${marketCap}`)
+      console.log(`Real token data - Symbol: ${realSymbol}, Name: ${realName}, Price: ${price}`)
 
       return {
-        symbol: attrs.symbol,
-        name: attrs.name,
+        symbol: realSymbol,
+        name: realName,
         price: price,
         change24h: 0, // This endpoint doesn't provide 24h change
         volume24h: volume24h,
@@ -254,29 +251,31 @@ class GeckoTerminalService {
     return this.tokenConfigs
   }
 
-  // Method to get token data by symbol
+  // Method to get token data by symbol (fallback symbol)
   async getTokenDataBySymbol(symbol: string): Promise<TokenData> {
-    const config = this.tokenConfigs.find((t) => t.symbol.toLowerCase() === symbol.toLowerCase())
+    const config = this.tokenConfigs.find((t) => t.fallbackSymbol.toLowerCase() === symbol.toLowerCase())
     if (!config) {
       throw new Error(`Token configuration not found for symbol: ${symbol}`)
     }
     return await this.getTokenData(config.network, config.address)
   }
 
-  // Method to get all tokens data
+  // Method to get all tokens data - this will fetch REAL names and symbols
   async getAllTokensData(): Promise<TokenData[]> {
     const results: TokenData[] = []
 
     for (const config of this.tokenConfigs) {
       try {
+        console.log(`Fetching real data for ${config.network}:${config.address}`)
         const tokenData = await this.getTokenData(config.network, config.address)
         results.push(tokenData)
+        console.log(`Successfully fetched: ${tokenData.symbol} (${tokenData.name})`)
       } catch (error) {
-        console.error(`Failed to fetch data for ${config.symbol}:`, error)
+        console.error(`Failed to fetch data for ${config.fallbackSymbol}:`, error)
         // Add fallback data for failed tokens
         results.push({
-          symbol: config.symbol,
-          name: config.name,
+          symbol: config.fallbackSymbol,
+          name: config.fallbackName,
           price: 0,
           change24h: 0,
           volume24h: 0,

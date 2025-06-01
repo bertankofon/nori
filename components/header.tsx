@@ -38,8 +38,8 @@ export default function Header({
       <div className="flex items-center justify-between">
         {/* Left: Logo and Name */}
         <div className="flex items-center">
-          <div className="w-8 h-8 mr-2 bg-white/20 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">TL</span>
+          <div className="w-8 h-8 mr-2 flex items-center justify-center">
+            <img src="/logo.png" alt="TradeLayer Logo" className="w-full h-full" />
           </div>
           <h1 className="text-lg font-bold text-white">TradeLayer</h1>
         </div>

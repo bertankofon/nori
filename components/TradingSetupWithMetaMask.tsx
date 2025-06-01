@@ -39,8 +39,8 @@ export default function TradingSetupWithMetaMask() {
   return (
     <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
       <div className="p-6 text-center">
-        <div className="w-24 h-24 mx-auto mb-6 bg-yellow-500 rounded-2xl flex items-center justify-center">
-          <span className="text-white font-bold text-2xl">TL</span>
+        <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+          <img src="/logo.png" alt="TradeLayer Logo" className="w-full h-full" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to TradeLayer</h2>
         <p className="text-gray-600 mb-6">Swipe to trade crypto with leverage</p>

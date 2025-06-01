@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import TokenCard from "@/components/token-card"
 import BottomNav from "@/components/bottom-nav"
 import Header from "@/components/header"
 import TradingSetupWithMetaMask from "@/components/TradingSetupWithMetaMask"
-import { mockTokens } from "@/lib/mock-data"
+import RealTokenCard from "@/components/real-token-card"
 import { TradingProvider, useTrading } from "@/contexts/TradingContext"
 import Positions from "@/components/my-assets"
 import { Card } from "@/components/ui/card"
 import PoweredFooter from "@/components/powered-footer"
+import { useAllTokensData } from "@/hooks/useTokenData"
+import type { TokenData } from "@/services/geckoTerminalService"
 
 function HomeContent() {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -27,22 +28,18 @@ function HomeContent() {
   ])
   const { isInitialized, isReady, openPosition, updateTokenPrice } = useTrading()
 
-  // Filter tokens based on selected chains
-  const getTokensByChain = (chainId: string) => {
-    const chainTokenMap: Record<string, string[]> = {
-      eth: ["ETH", "PEPE", "ETH-1"],
-      solana: ["SOL", "WIF", "SOL-1"],
-      avax: ["WAVAX", "COQ", "AVAX-1"],
-      bsc: ["BSC-1"],
-      base: ["BASE-1"],
-      arbitrum: ["ARB"],
-      "flow-evm": ["PUMP", "FLOW1", "FLOW2", "FLOW3", "FLOW4"],
-    }
+  // Fetch real token data from API
+  const { data: allTokensData, loading: tokensLoading, error: tokensError } = useAllTokensData()
 
-    return mockTokens.filter((token) => chainTokenMap[chainId]?.includes(token.symbol) || false)
+  // Filter tokens based on selected chains
+  const getTokensByChain = (chainId: string, tokens: TokenData[]) => {
+    return tokens.filter((token) => token.network === chainId)
   }
 
-  const availableTokens = selectedChains.length > 0 ? selectedChains.flatMap(getTokensByChain) : mockTokens
+  const availableTokens =
+    selectedChains.length > 0
+      ? selectedChains.flatMap((chainId) => getTokensByChain(chainId, allTokensData))
+      : allTokensData
 
   // Reset current index if it's out of bounds
   useEffect(() => {
@@ -69,10 +66,12 @@ function HomeContent() {
     // Parse amount (remove "USDC" and convert to number)
     const usdcAmount = Number.parseFloat(amount.replace(" USDC", "")) * leverage
 
-    // Get current price (you'll need to get this from your token data)
-    const currentPrice = Number.parseFloat(currentToken.price.replace(",", ""))
+    // Get current price from real API data
+    const currentPrice = currentToken.price
 
-    console.log(`Opening ${action} position for ${tokenSymbol} with ${usdcAmount} USDC at $${currentPrice}`)
+    console.log(
+      `Opening ${action} position for ${tokenSymbol} (${currentToken.name}) with ${usdcAmount} USDC at $${currentPrice}`,
+    )
 
     try {
       const position = await openPosition(tokenSymbol, currentToken.name, action, usdcAmount, currentPrice)
@@ -106,7 +105,7 @@ function HomeContent() {
     )
   }
 
-  if (availableTokens.length === 0) {
+  if (tokensLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-yellow-400 to-yellow-500 flex flex-col font-poppins">
         <Header
@@ -120,8 +119,39 @@ function HomeContent() {
         <main className="flex-1 flex items-center justify-center p-4 pb-24">
           <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
             <div className="p-6 text-center">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">No Tokens Available</h2>
-              <p className="text-gray-600">Please select at least one chain to see tokens</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto mb-4"></div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Loading Tokens</h2>
+              <p className="text-gray-600">Fetching real token data from API...</p>
+            </div>
+          </Card>
+        </main>
+        <PoweredFooter />
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+    )
+  }
+
+  if (tokensError || availableTokens.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-yellow-400 to-yellow-500 flex flex-col font-poppins">
+        <Header
+          amount={amount}
+          setAmount={setAmount}
+          leverage={leverage}
+          setLeverage={setLeverage}
+          selectedChains={selectedChains}
+          onChainsChange={setSelectedChains}
+        />
+        <main className="flex-1 flex items-center justify-center p-4 pb-24">
+          <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
+            <div className="p-6 text-center">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                {tokensError ? "Error Loading Tokens" : "No Tokens Available"}
+              </h2>
+              <p className="text-gray-600">
+                {tokensError ? "Failed to fetch token data from API" : "Please select at least one chain to see tokens"}
+              </p>
+              {tokensError && <p className="text-red-600 text-sm mt-2">{tokensError}</p>}
             </div>
           </Card>
         </main>
@@ -146,8 +176,8 @@ function HomeContent() {
           <main className="flex-1 flex flex-col items-center">
             <div className="flex-1 flex items-center justify-center p-4 w-full">
               <div className="w-full">
-                <TokenCard
-                  token={currentToken}
+                <RealTokenCard
+                  tokenData={currentToken}
                   onSwipe={handleSwipe}
                   isReady={isReady}
                   currentIndex={currentIndex}
@@ -167,8 +197,8 @@ function HomeContent() {
           <div className="flex-1 flex items-center justify-center p-4">
             <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
               <div className="p-6 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-yellow-500 rounded-xl flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">TL</span>
+                <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <img src="/logo.png" alt="TradeLayer Logo" className="w-full h-full" />
                 </div>
                 <h2 className="text-xl font-bold text-gray-900 mb-2">Profile</h2>
                 <p className="text-gray-600">Coming soon...</p>

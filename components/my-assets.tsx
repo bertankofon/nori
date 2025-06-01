@@ -20,25 +20,25 @@ const CHAIN_CONFIG: Record<string, { name: string; color: string; icon: string }
   "flow-evm": { name: "Flow", color: "#00D4AA", icon: "◉" },
 }
 
-// Token to chain mapping
+// Token to chain mapping with proper symbols
 const TOKEN_CHAIN_MAP: Record<string, string> = {
   ETH: "eth",
   PEPE: "eth",
-  "ETH-1": "eth",
+  EMAX: "eth",
   SOL: "solana",
   WIF: "solana",
-  "SOL-1": "solana",
+  SMEME: "solana",
   WAVAX: "avax",
   COQ: "avax",
-  "AVAX-1": "avax",
-  "BSC-1": "bsc",
-  "BASE-1": "base",
+  ARUSH: "avax",
+  BCT: "bsc",
+  BASE: "base",
   ARB: "arbitrum",
   PUMP: "flow-evm",
-  FLOW1: "flow-evm",
-  FLOW2: "flow-evm",
-  FLOW3: "flow-evm",
-  FLOW4: "flow-evm",
+  FLOW: "flow-evm",
+  FST: "flow-evm",
+  FDF: "flow-evm",
+  FNFT: "flow-evm",
 }
 
 export default function Positions() {
@@ -53,18 +53,21 @@ export default function Positions() {
       const tokens = [
         "ETH",
         "PUMP",
-        "FLOW1",
+        "FLOW",
         "SOL",
         "WIF",
         "WAVAX",
         "COQ",
         "PEPE",
         "ARB",
-        "SOL-1",
-        "AVAX-1",
-        "BSC-1",
-        "ETH-1",
-        "BASE-1",
+        "SMEME",
+        "ARUSH",
+        "BCT",
+        "EMAX",
+        "BASE",
+        "FST",
+        "FDF",
+        "FNFT",
       ]
       const randomToken = tokens[Math.floor(Math.random() * tokens.length)]
       const currentPrice = positions.find((p) => p.symbol === randomToken)?.currentPrice || 0
@@ -85,18 +88,21 @@ export default function Positions() {
     const tokens = [
       "ETH",
       "PUMP",
-      "FLOW1",
+      "FLOW",
       "SOL",
       "WIF",
       "WAVAX",
       "COQ",
       "PEPE",
       "ARB",
-      "SOL-1",
-      "AVAX-1",
-      "BSC-1",
-      "ETH-1",
-      "BASE-1",
+      "SMEME",
+      "ARUSH",
+      "BCT",
+      "EMAX",
+      "BASE",
+      "FST",
+      "FDF",
+      "FNFT",
     ]
     tokens.forEach((token) => {
       const position = positions.find((p) => p.symbol === token)
