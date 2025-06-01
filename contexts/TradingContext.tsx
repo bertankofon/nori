@@ -1,88 +1,92 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
-import { yellowTradingService, type Position } from "@/services/yellowTradingService"
+import type React from "react"
+import { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { v4 as uuidv4 } from "uuid"
+import { mockTokens } from "@/lib/mock-data"
+
+// Define types
+export type PositionType = "long" | "short"
+
+export interface Position {
+  id: string
+  symbol: string
+  name: string
+  type: PositionType
+  amount: number
+  entryPrice: number
+  currentPrice: number
+  timestamp: number
+  pnl: number
+  pnlPercentage: number
+  leverage: number
+  color?: string
+}
 
 interface TradingContextType {
   isInitialized: boolean
   isReady: boolean
+  status: string
   positions: Position[]
   totalPnL: number
-  initializeTrading: (privateKey: string) => Promise<boolean>
+  leverage: number
+  setLeverage: (leverage: number) => void
+  initialize: (privateKey?: string) => Promise<boolean>
   openPosition: (
-    tokenSymbol: string,
-    tokenName: string,
-    type: "long" | "short",
+    symbol: string,
+    name: string,
+    type: PositionType,
     amount: number,
     price: number,
   ) => Promise<Position | null>
-  closePosition: (positionId: string, currentPrice: number) => Promise<boolean>
-  updateTokenPrice: (tokenSymbol: string, price: number) => void
-  getPositionsForToken: (tokenSymbol: string) => Position[]
-  status: { connected: boolean; authenticated: boolean; sessionActive: boolean }
-  // Add this for debugging
-  setIsInitialized: (value: boolean) => void
+  closePosition: (id: string) => Promise<boolean>
+  updateTokenPrice: (symbol: string, price: number) => void
+  getPositionsForToken: (symbol: string) => Position[]
 }
 
+// Create context
 const TradingContext = createContext<TradingContextType | undefined>(undefined)
 
-export function TradingProvider({ children }: { children: ReactNode }) {
+// Provider component
+export function TradingProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false)
+  const [isReady, setIsReady] = useState(false)
+  const [status, setStatus] = useState("Not initialized")
   const [positions, setPositions] = useState<Position[]>([])
   const [totalPnL, setTotalPnL] = useState(0)
+  const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({})
+  const [leverage, setLeverage] = useState(1)
 
-  // Add debug logging for state changes
+  // Calculate total P&L whenever positions change
   useEffect(() => {
-    console.log("TradingContext - isInitialized changed to:", isInitialized)
-  }, [isInitialized])
+    const total = positions.reduce((sum, position) => sum + position.pnl, 0)
+    setTotalPnL(total)
+  }, [positions])
 
-  // Memoize the update functions to prevent infinite re-renders
-  const updatePositions = useCallback((): void => {
-    const openPositions = yellowTradingService.getOpenPositions()
-    const pnl = yellowTradingService.getTotalPnL()
-    setPositions(openPositions)
-    setTotalPnL(pnl)
-  }, [])
-
-  const updateTokenPrice = useCallback(
-    (tokenSymbol: string, price: number): void => {
-      yellowTradingService.updatePositionPrices(tokenSymbol, price)
-      updatePositions()
-    },
-    [updatePositions],
-  )
-
-  // Initialize trading service with detailed logging
-  const initializeTrading = useCallback(async (privateKey: string): Promise<boolean> => {
+  // Initialize trading service
+  const initialize = useCallback(async (privateKey?: string) => {
     try {
-      console.log("🚀 TradingContext: Starting trading initialization...")
+      setStatus("Initializing demo mode...")
 
-      // Validate private key format
-      if (!privateKey || privateKey.length < 64) {
-        console.error("❌ TradingContext: Invalid private key format")
-        return false
-      }
+      // Simulate initialization delay
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      console.log("🔑 TradingContext: Private key validated, calling yellowTradingService.initialize...")
-      const success = await yellowTradingService.initialize(privateKey)
-      console.log("📊 TradingContext: yellowTradingService.initialize returned:", success)
+      // Initialize token prices from mock data
+      const prices: Record<string, number> = {}
+      mockTokens.forEach((token) => {
+        const price = typeof token.price === "string" ? Number.parseFloat(token.price.replace(",", "")) : token.price
+        prices[token.symbol] = price
+      })
+      setTokenPrices(prices)
 
-      if (success) {
-        console.log("✅ TradingContext: Setting isInitialized to true")
-        setIsInitialized(true)
+      setIsInitialized(true)
+      setIsReady(true)
+      setStatus("Demo mode active")
 
-        // Double-check the service status
-        const status = yellowTradingService.getStatus()
-        const isReady = yellowTradingService.isReady()
-        console.log("📈 TradingContext: Service status after init:", status)
-        console.log("🎯 TradingContext: Service isReady:", isReady)
-      } else {
-        console.log("❌ TradingContext: Initialization failed, keeping isInitialized as false")
-      }
-
-      return success
+      return true
     } catch (error) {
-      console.error("💥 TradingContext: Failed to initialize trading:", error)
+      console.error("Failed to initialize trading service:", error)
+      setStatus("Initialization failed")
       return false
     }
   }, [])
@@ -90,86 +94,120 @@ export function TradingProvider({ children }: { children: ReactNode }) {
   // Open a new position
   const openPosition = useCallback(
     async (
-      tokenSymbol: string,
-      tokenName: string,
-      type: "long" | "short",
+      symbol: string,
+      name: string,
+      type: PositionType,
       amount: number,
       price: number,
     ): Promise<Position | null> => {
-      console.log("📈 TradingContext: Opening position:", { tokenSymbol, type, amount, price })
-      const position = await yellowTradingService.openPosition(tokenSymbol, tokenName, type, amount, price)
-      if (position) {
-        console.log("✅ TradingContext: Position opened successfully:", position)
-        updatePositions()
-      } else {
-        console.log("❌ TradingContext: Failed to open position")
+      try {
+        // Get token color from mock data
+        const tokenColor = mockTokens.find((t) => t.symbol === symbol)?.color || "#627EEA"
+
+        // Use the current price from tokenPrices if available, otherwise use the provided price
+        const actualPrice = tokenPrices[symbol] || price
+
+        // Create new position
+        const newPosition: Position = {
+          id: uuidv4(),
+          symbol,
+          name,
+          type,
+          amount,
+          entryPrice: actualPrice,
+          currentPrice: actualPrice,
+          timestamp: Date.now(),
+          pnl: 0,
+          pnlPercentage: 0,
+          leverage: leverage, // Include the current leverage
+          color: tokenColor,
+        }
+
+        setPositions((prev) => [...prev, newPosition])
+        return newPosition
+      } catch (error) {
+        console.error("Failed to open position:", error)
+        return null
       }
-      return position
     },
-    [updatePositions],
+    [tokenPrices, leverage],
   )
 
-  // Close a position
-  const closePosition = useCallback(
-    async (positionId: string, currentPrice: number): Promise<boolean> => {
-      const success = await yellowTradingService.closePosition(positionId, currentPrice)
-      if (success) {
-        updatePositions()
-      }
-      return success
-    },
-    [updatePositions],
-  )
-
-  // Get positions for a specific token
-  const getPositionsForToken = useCallback((tokenSymbol: string): Position[] => {
-    return yellowTradingService.getPositionsForToken(tokenSymbol)
+  // Close an existing position
+  const closePosition = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      setPositions((prev) => prev.filter((p) => p.id !== id))
+      return true
+    } catch (error) {
+      console.error("Failed to close position:", error)
+      return false
+    }
   }, [])
 
-  // Get service status with logging
-  const status = yellowTradingService.getStatus()
-  const isReady = yellowTradingService.isReady()
+  // Update token price and recalculate P&L for all positions with that token
+  const updateTokenPrice = useCallback((symbol: string, price: number) => {
+    setTokenPrices((prev) => ({
+      ...prev,
+      [symbol]: price,
+    }))
 
-  // Log status changes
-  useEffect(() => {
-    console.log("📊 TradingContext: Status update:", { status, isReady, isInitialized })
-  }, [status.connected, status.authenticated, status.sessionActive, isReady, isInitialized])
+    setPositions((prev) =>
+      prev.map((position) => {
+        if (position.symbol === symbol) {
+          // Calculate P&L based on position type and leverage
+          let pnl = 0
+          let pnlPercentage = 0
 
-  // Update positions periodically - only run once
-  useEffect(() => {
-    const interval = setInterval(updatePositions, 5000) // Reduced frequency to 5 seconds
-    return () => clearInterval(interval)
-  }, [updatePositions])
+          if (position.type === "long") {
+            // For long positions: profit when price goes up
+            pnlPercentage = (price / position.entryPrice - 1) * 100 * position.leverage
+            pnl = position.amount * (price / position.entryPrice - 1) * position.leverage
+          } else {
+            // For short positions: profit when price goes down
+            pnlPercentage = (1 - price / position.entryPrice) * 100 * position.leverage
+            pnl = position.amount * (1 - price / position.entryPrice) * position.leverage
+          }
 
-  // Load initial positions - only run once when initialized
-  useEffect(() => {
-    if (isInitialized) {
-      console.log("🔄 TradingContext: isInitialized is true, updating positions...")
-      updatePositions()
-    }
-  }, [isInitialized, updatePositions])
+          return {
+            ...position,
+            currentPrice: price,
+            pnl,
+            pnlPercentage,
+          }
+        }
+        return position
+      }),
+    )
+  }, [])
 
-  return (
-    <TradingContext.Provider
-      value={{
-        isInitialized,
-        isReady,
-        positions,
-        totalPnL,
-        initializeTrading,
-        openPosition,
-        closePosition,
-        updateTokenPrice,
-        getPositionsForToken,
-        status,
-        setIsInitialized, // Add this for debugging
-      }}
-    >
-      {children}
-    </TradingContext.Provider>
+  // Get all positions for a specific token
+  const getPositionsForToken = useCallback(
+    (symbol: string) => {
+      return positions.filter((p) => p.symbol === symbol)
+    },
+    [positions],
   )
+
+  // Context value
+  const value = {
+    isInitialized,
+    isReady,
+    status,
+    positions,
+    totalPnL,
+    leverage,
+    setLeverage,
+    initialize,
+    openPosition,
+    closePosition,
+    updateTokenPrice,
+    getPositionsForToken,
+  }
+
+  return <TradingContext.Provider value={value}>{children}</TradingContext.Provider>
 }
 
+// Custom hook to use the trading context
 export function useTrading() {
   const context = useContext(TradingContext)
   if (context === undefined) {

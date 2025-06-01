@@ -68,14 +68,104 @@ class GeckoTerminalService {
     {
       network: "flow-evm",
       address: "0x6a64e027e3f6a94acbdcf39cf0cbb4bead5f5ecb", // Flow EVM Token 1
-      symbol: "FLOW1", // We'll get the real symbol from API
-      name: "Flow Token 1", // We'll get the real name from API
+      symbol: "FLOW1",
+      name: "Flow Token 1",
     },
     {
       network: "flow-evm",
       address: "0x68eb683a393c8a1c816255b4fc4b89d73c52ad4b", // Flow EVM Token 2 (PUMP)
-      symbol: "PUMP", // We know this is PUMP from your API response
-      name: "pump.flow", // We know this is pump.flow from your API response
+      symbol: "PUMP",
+      name: "pump.flow",
+    },
+    {
+      network: "flow-evm",
+      address: "0x995258cea49c25595cd94407fad9e99b81406a84", // New Flow EVM Token 3
+      symbol: "FLOW2",
+      name: "Flow Token 2",
+    },
+    {
+      network: "flow-evm",
+      address: "0xd8ad8ae8375aa31bff541e17dc4b4917014ebdaa", // New Flow EVM Token 4
+      symbol: "FLOW3",
+      name: "Flow Token 3",
+    },
+    {
+      network: "flow-evm",
+      address: "0x169bb04590fbf18b09739f951274aa5650dfccde", // New Flow EVM Token 5
+      symbol: "FLOW4",
+      name: "Flow Token 4",
+    },
+    // Solana tokens
+    {
+      network: "solana",
+      address: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+      symbol: "SOL-1",
+      name: "Solana Token 1",
+    },
+    {
+      network: "solana",
+      address: "So11111111111111111111111111111111111111112",
+      symbol: "SOL",
+      name: "Wrapped SOL",
+    },
+    {
+      network: "solana",
+      address: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+      symbol: "WIF",
+      name: "dogwifhat",
+    },
+    // Avalanche tokens
+    {
+      network: "avax",
+      address: "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+      symbol: "WAVAX",
+      name: "Wrapped AVAX",
+    },
+    {
+      network: "avax",
+      address: "0xffff003a6bad9b743d658048742935fffe2b6ed7",
+      symbol: "AVAX-1",
+      name: "Avalanche Token 1",
+    },
+    {
+      network: "avax",
+      address: "0x420fca0121dc28039145009570975747295f2329",
+      symbol: "COQ",
+      name: "Coq Inu",
+    },
+    // BSC tokens
+    {
+      network: "bsc",
+      address: "0x55ad16bd573b3365f43a9daeb0cc66a73821b4a5",
+      symbol: "BSC-1",
+      name: "BSC Token 1",
+    },
+    // Ethereum tokens
+    {
+      network: "eth",
+      address: "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+      symbol: "PEPE",
+      name: "Pepe",
+    },
+    {
+      network: "eth",
+      address: "0x26e550ac11b26f78a04489d5f20f24e3559f7dd9",
+      symbol: "ETH-1",
+      name: "Ethereum Token 1",
+    },
+    // Base tokens
+    {
+      network: "base",
+      address: "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b",
+      symbol: "BASE-1",
+      name: "Base Token 1",
+    },
+    // Arbitrum tokens
+    {
+      network: "arbitrum",
+      address: "0x912ce59144191c1204e64559fe8253a0e49e6548",
+      symbol: "ARB",
+      name: "Arbitrum",
     },
   ]
 

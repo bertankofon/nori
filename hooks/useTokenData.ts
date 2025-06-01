@@ -75,3 +75,65 @@ export function usePumpTokenData(): UseTokenDataReturn {
 export function useFlowToken1Data(): UseTokenDataReturn {
   return useTokenData("flow-evm", "0x6a64e027e3f6a94acbdcf39cf0cbb4bead5f5ecb", "FLOW1")
 }
+
+export function useFlowToken2Data(): UseTokenDataReturn {
+  return useTokenData("flow-evm", "0x995258cea49c25595cd94407fad9e99b81406a84", "FLOW2")
+}
+
+export function useFlowToken3Data(): UseTokenDataReturn {
+  return useTokenData("flow-evm", "0xd8ad8ae8375aa31bff541e17dc4b4917014ebdaa", "FLOW3")
+}
+
+export function useFlowToken4Data(): UseTokenDataReturn {
+  return useTokenData("flow-evm", "0x169bb04590fbf18b09739f951274aa5650dfccde", "FLOW4")
+}
+
+// Solana tokens
+export function useSolanaToken1Data(): UseTokenDataReturn {
+  return useTokenData("solana", "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN", "SOL-1")
+}
+
+export function useWrappedSolData(): UseTokenDataReturn {
+  return useTokenData("solana", "So11111111111111111111111111111111111111112", "SOL")
+}
+
+export function useWifData(): UseTokenDataReturn {
+  return useTokenData("solana", "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm", "WIF")
+}
+
+// Avalanche tokens
+export function useWrappedAvaxData(): UseTokenDataReturn {
+  return useTokenData("avax", "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7", "WAVAX")
+}
+
+export function useAvaxToken1Data(): UseTokenDataReturn {
+  return useTokenData("avax", "0xffff003a6bad9b743d658048742935fffe2b6ed7", "AVAX-1")
+}
+
+export function useCoqData(): UseTokenDataReturn {
+  return useTokenData("avax", "0x420fca0121dc28039145009570975747295f2329", "COQ")
+}
+
+// BSC tokens
+export function useBscToken1Data(): UseTokenDataReturn {
+  return useTokenData("bsc", "0x55ad16bd573b3365f43a9daeb0cc66a73821b4a5", "BSC-1")
+}
+
+// Ethereum tokens
+export function usePepeData(): UseTokenDataReturn {
+  return useTokenData("eth", "0x6982508145454ce325ddbe47a25d4ec3d2311933", "PEPE")
+}
+
+export function useEthToken1Data(): UseTokenDataReturn {
+  return useTokenData("eth", "0x26e550ac11b26f78a04489d5f20f24e3559f7dd9", "ETH-1")
+}
+
+// Base tokens
+export function useBaseToken1Data(): UseTokenDataReturn {
+  return useTokenData("base", "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b", "BASE-1")
+}
+
+// Arbitrum tokens
+export function useArbData(): UseTokenDataReturn {
+  return useTokenData("arbitrum", "0x912ce59144191c1204e64559fe8253a0e49e6548", "ARB")
+}

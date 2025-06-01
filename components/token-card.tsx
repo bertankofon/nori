@@ -1,9 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Card } from "@/components/ui/card"
-import { X, Heart, DollarSign, TrendingUp, BarChart3, Trophy, RefreshCw } from "lucide-react"
+import { X, Heart, TrendingUp, BarChart3, RefreshCw } from "lucide-react"
 import { useEthereumData, usePumpTokenData, useFlowToken1Data } from "@/hooks/useTokenData"
 import { geckoTerminalService } from "@/services/geckoTerminalService"
 import type { Token } from "@/lib/types"
@@ -11,11 +11,51 @@ import { useTrading } from "@/contexts/TradingContext"
 
 interface TokenCardProps {
   token: Token
-  onSwipe: (direction: "left" | "right", tokenSymbol: string) => void
+  onSwipe: (direction: "left" | "right" | "pass", tokenSymbol: string) => void
   isReady?: boolean
+  currentIndex?: number
+  totalTokens?: number
 }
 
-export default function TokenCard({ token, onSwipe, isReady = false }: TokenCardProps) {
+// Chain configuration for display
+const CHAIN_CONFIG: Record<string, { name: string; color: string; icon: string }> = {
+  eth: { name: "Ethereum", color: "#627EEA", icon: "Ξ" },
+  solana: { name: "Solana", color: "#9945FF", icon: "◎" },
+  avax: { name: "Avalanche", color: "#E84142", icon: "▲" },
+  bsc: { name: "BSC", color: "#F3BA2F", icon: "B" },
+  base: { name: "Base", color: "#0052FF", icon: "⬟" },
+  arbitrum: { name: "Arbitrum", color: "#2D374B", icon: "◆" },
+  "flow-evm": { name: "Flow", color: "#00D4AA", icon: "◉" },
+}
+
+// Token to chain mapping
+const TOKEN_CHAIN_MAP: Record<string, string> = {
+  ETH: "eth",
+  PEPE: "eth",
+  "ETH-1": "eth",
+  SOL: "solana",
+  WIF: "solana",
+  "SOL-1": "solana",
+  WAVAX: "avax",
+  COQ: "avax",
+  "AVAX-1": "avax",
+  "BSC-1": "bsc",
+  "BASE-1": "base",
+  ARB: "arbitrum",
+  PUMP: "flow-evm",
+  FLOW1: "flow-evm",
+  FLOW2: "flow-evm",
+  FLOW3: "flow-evm",
+  FLOW4: "flow-evm",
+}
+
+export default function TokenCard({
+  token,
+  onSwipe,
+  isReady = false,
+  currentIndex = 0,
+  totalTokens = 3,
+}: TokenCardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [rotation, setRotation] = useState(0)
@@ -28,7 +68,7 @@ export default function TokenCard({ token, onSwipe, isReady = false }: TokenCard
   const { data: flow1Data, loading: flow1Loading, error: flow1Error, refetch: flow1Refetch } = useFlowToken1Data()
 
   // Add this line after the existing hooks
-  const { status } = useTrading()
+  const { status, updateTokenPrice } = useTrading()
 
   // Determine which data to use based on token symbol
   let tokenData = null
@@ -52,6 +92,17 @@ export default function TokenCard({ token, onSwipe, isReady = false }: TokenCard
     error = flow1Error
     refetch = flow1Refetch
   }
+
+  // Get chain info for this token
+  const chainId = TOKEN_CHAIN_MAP[token.symbol] || "eth"
+  const chainInfo = CHAIN_CONFIG[chainId]
+
+  // Update token price in context when it changes
+  useEffect(() => {
+    if (tokenData && tokenData.price) {
+      updateTokenPrice(token.symbol, tokenData.price)
+    }
+  }, [tokenData, token.symbol, updateTokenPrice])
 
   console.log(`TokenCard for ${token.symbol}:`, { tokenData, loading, error })
 
@@ -87,7 +138,7 @@ export default function TokenCard({ token, onSwipe, isReady = false }: TokenCard
   const handleEnd = () => {
     if (!isDragging) return
 
-    const threshold = 100
+    const threshold = 80
     if (Math.abs(dragOffset.x) > threshold) {
       const direction = dragOffset.x > 0 ? "right" : "left"
       onSwipe(direction, token.symbol)
@@ -118,11 +169,11 @@ export default function TokenCard({ token, onSwipe, isReady = false }: TokenCard
 
   if (loading) {
     return (
-      <Card className="w-full bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
-        <div className="p-6 flex items-center justify-center">
+      <Card className="w-full max-w-sm mx-auto bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
+        <div className="p-4 flex items-center justify-center">
           <div className="text-center">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400" />
-            <p className="text-gray-600">Loading {token.symbol} data...</p>
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-gray-400" />
+            <p className="text-gray-600 text-sm">Loading {token.symbol} data...</p>
           </div>
         </div>
       </Card>
@@ -136,8 +187,8 @@ export default function TokenCard({ token, onSwipe, isReady = false }: TokenCard
   }
 
   const getOverlayText = () => {
-    if (dragOffset.x > 50) return "BUY"
-    if (dragOffset.x < -50) return "SELL"
+    if (dragOffset.x > 50) return "LONG"
+    if (dragOffset.x < -50) return "SHORT"
     return ""
   }
 
@@ -145,7 +196,14 @@ export default function TokenCard({ token, onSwipe, isReady = false }: TokenCard
   const isVerySmallPrice = tokenData && tokenData.price < 0.01
 
   return (
-    <div className="relative">
+    <div className="relative w-full max-w-sm mx-auto">
+      {/* Token indicator */}
+      <div className="absolute -top-6 left-0 right-0 flex justify-center items-center gap-1 text-white">
+        {Array.from({ length: totalTokens }).map((_, i) => (
+          <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === currentIndex ? "bg-white" : "bg-white/30"}`} />
+        ))}
+      </div>
+
       <Card
         ref={cardRef}
         className={`w-full bg-white/90 backdrop-blur-sm border-0 shadow-2xl cursor-grab active:cursor-grabbing transition-all duration-300 ${
@@ -167,45 +225,53 @@ export default function TokenCard({ token, onSwipe, isReady = false }: TokenCard
         <div
           className={`absolute inset-0 rounded-lg ${getOverlayColor()} flex items-center justify-center z-10 transition-all duration-200`}
         >
-          {getOverlayText() && <span className="text-2xl font-bold text-white">{getOverlayText()}</span>}
+          {getOverlayText() && <span className="text-xl font-bold text-white">{getOverlayText()}</span>}
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 space-y-4">
           {/* Token Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
                 style={{ backgroundColor: token.color }}
               >
                 {token.symbol.slice(0, 2)}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{displayToken.name}</h2>
-                <p className="text-gray-600">{displayToken.symbol}</p>
-                {tokenData && (
-                  <p className="text-xs text-gray-500">
-                    Updated: {new Date(tokenData.lastUpdated).toLocaleTimeString()}
-                  </p>
-                )}
+                <h2 className="text-lg font-bold text-gray-900">{displayToken.name}</h2>
+                <div className="flex items-center gap-2">
+                  <p className="text-gray-600 text-sm">{displayToken.symbol}</p>
+                  {/* Chain indicator */}
+                  <div className="flex items-center gap-1">
+                    <div
+                      className="w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                      style={{ backgroundColor: chainInfo.color }}
+                      title={chainInfo.name}
+                    >
+                      {chainInfo.icon}
+                    </div>
+                    <span className="text-xs text-gray-500">{chainInfo.name}</span>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="text-right">
               <div className="flex flex-col items-end">
                 <div
-                  className={`text-xs px-2 py-1 rounded-full mb-2 ${
+                  className={`text-xs px-2 py-1 rounded-full mb-1 ${
                     isReady ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                   }`}
                 >
-                  {isReady ? "Trading Ready" : "Setup Required"}
+                  {isReady ? "Ready" : "Setup"}
                 </div>
-                <p className={`font-bold text-gray-900 ${isVerySmallPrice ? "text-lg" : "text-2xl"}`}>
+                <p className={`font-bold text-gray-900 ${isVerySmallPrice ? "text-base" : "text-xl"}`}>
                   ${displayToken.price}
                 </p>
-                {isVerySmallPrice && <p className="text-xs text-gray-500 mt-1">Micro-cap token</p>}
+                {isVerySmallPrice && <p className="text-xs text-gray-500 mt-1">Micro-cap</p>}
               </div>
               <p
-                className={`text-sm font-semibold px-2 py-1 rounded-full mt-2 ${
+                className={`text-xs font-semibold px-2 py-1 rounded-full mt-1 ${
                   displayToken.change24h >= 0 ? "text-green-600 bg-green-100" : "text-red-600 bg-red-100"
                 }`}
               >
@@ -220,55 +286,72 @@ export default function TokenCard({ token, onSwipe, isReady = false }: TokenCard
 
           {/* Price Chart */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Price Chart (24h)</h3>
-            <div className="h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+            <h3 className="text-base font-semibold text-gray-900 mb-2">Price Chart (24h)</h3>
+            <div className="h-24 bg-gray-100 rounded-lg flex items-center justify-center">
               <svg width="100%" height="100%" viewBox="0 0 300 100" className="text-green-500">
                 <polyline fill="none" stroke="currentColor" strokeWidth="2" points={token.chartData} />
               </svg>
             </div>
           </div>
 
-          {/* Token Stats */}
+          {/* Token Stats - Simplified to only show volume and market cap */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Token Stats</h3>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-green-50 p-3 rounded-lg text-center">
-                <BarChart3 className="w-5 h-5 text-green-600 mx-auto mb-1" />
-                <p className="text-sm font-bold text-gray-900">${displayToken.volume24h}</p>
-                <p className="text-xs text-gray-600">24h Vol</p>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">Token Stats</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-green-50 p-3 rounded-lg flex items-center">
+                <BarChart3 className="w-5 h-5 text-green-600 mr-3" />
+                <div>
+                  <p className="text-xs text-gray-600">24h Volume</p>
+                  <p className="text-sm font-bold text-gray-900">${displayToken.volume24h}</p>
+                </div>
               </div>
-              <div className="bg-blue-50 p-3 rounded-lg text-center">
-                <TrendingUp className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                <p className="text-sm font-bold text-gray-900">${displayToken.marketCap}</p>
-                <p className="text-xs text-gray-600">Market Cap</p>
-              </div>
-              <div className="bg-purple-50 p-3 rounded-lg text-center">
-                <Trophy className="w-5 h-5 text-purple-600 mx-auto mb-1" />
-                <p className="text-sm font-bold text-gray-900">#{token.rank}</p>
-                <p className="text-xs text-gray-600">Rank</p>
+              <div className="bg-blue-50 p-3 rounded-lg flex items-center">
+                <TrendingUp className="w-5 h-5 text-blue-600 mr-3" />
+                <div>
+                  <p className="text-xs text-gray-600">Market Cap</p>
+                  <p className="text-sm font-bold text-gray-900">${displayToken.marketCap}</p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-center gap-6 pt-4">
+          <div className="flex justify-center gap-4 pt-2">
             <button
-              className="w-16 h-16 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center transition-colors"
-              onClick={() => onSwipe("left", token.symbol)}
+              className="w-14 h-14 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 shadow-lg"
+              onClick={(e) => {
+                e.stopPropagation()
+                onSwipe("left", token.symbol)
+              }}
+              style={{
+                background: "linear-gradient(135deg, #fecaca 0%, #fca5a5 100%)",
+              }}
             >
-              <X className="w-8 h-8 text-red-600" />
+              <X className="w-6 h-6 text-red-600" />
             </button>
             <button
-              className="w-16 h-16 bg-pink-100 hover:bg-pink-200 rounded-full flex items-center justify-center transition-colors"
-              onClick={() => console.log("Add to watchlist")}
+              className="w-14 h-14 bg-pink-100 hover:bg-pink-200 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 shadow-lg"
+              onClick={(e) => {
+                e.stopPropagation()
+                onSwipe("pass", token.symbol)
+              }}
+              style={{
+                background: "linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)",
+              }}
             >
-              <Heart className="w-8 h-8 text-pink-600" />
+              <Heart className="w-6 h-6 text-pink-600" />
             </button>
             <button
-              className="w-16 h-16 bg-green-100 hover:bg-green-200 rounded-full flex items-center justify-center transition-colors"
-              onClick={() => onSwipe("right", token.symbol)}
+              className="w-14 h-14 bg-green-100 hover:bg-green-200 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 shadow-lg"
+              onClick={(e) => {
+                e.stopPropagation()
+                onSwipe("right", token.symbol)
+              }}
+              style={{
+                background: "linear-gradient(135deg, #bbf7d0 0%, #86efac 100%)",
+              }}
             >
-              <DollarSign className="w-8 h-8 text-green-600" />
+              <TrendingUp className="w-6 h-6 text-green-600" />
             </button>
           </div>
         </div>

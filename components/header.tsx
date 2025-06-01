@@ -1,111 +1,113 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useRef, useEffect } from "react"
-import { ChevronDown, TrendingUp } from "lucide-react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Slider } from "@/components/ui/slider"
+import ChainFilter from "./chain-filter"
 
 interface HeaderProps {
   amount: string
   setAmount: (amount: string) => void
-  showPositions: boolean
-  setShowPositions: (show: boolean) => void
+  leverage: number
+  setLeverage: (leverage: number) => void
+  selectedChains: string[]
+  onChainsChange: (chains: string[]) => void
 }
 
-export default function Header({ amount, setAmount, showPositions, setShowPositions }: HeaderProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isCustom, setIsCustom] = useState(false)
-  const [customValue, setCustomValue] = useState("")
-  const dropdownRef = useRef<HTMLDivElement>(null)
+export default function Header({
+  amount,
+  setAmount,
+  leverage,
+  setLeverage,
+  selectedChains,
+  onChainsChange,
+}: HeaderProps) {
+  const [sliderValue, setSliderValue] = useState([10])
 
-  const predefinedAmounts = ["1 USDC", "5 USDC", "10 USDC", "50 USDC"]
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
-
-  const handleCustomSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (customValue) {
-      setAmount(`${customValue} USDC`)
-      setIsCustom(false)
-      setIsOpen(false)
-    }
+  const handleSliderChange = (value: number[]) => {
+    setSliderValue(value)
+    setAmount(`${value[0]} USDC`)
   }
 
+  const leverageOptions = [1, 2, 5]
+
   return (
-    <header className="p-6 pt-12">
-      <h1 className="text-4xl font-bold text-black mb-6">Discover</h1>
+    <header className="bg-white/10 backdrop-blur-md p-4 safe-area-pt">
+      <div className="flex items-center justify-between">
+        {/* Left: Logo and Name */}
+        <div className="flex items-center">
+          <div className="w-8 h-8 mr-2 bg-white/20 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">TL</span>
+          </div>
+          <h1 className="text-lg font-bold text-white">TradeLayer</h1>
+        </div>
 
-      <div className="flex items-center gap-2 relative" ref={dropdownRef}>
-        <span className="text-black/70 text-lg">Amount:</span>
-        <button className="flex items-center gap-2 text-black text-lg font-semibold" onClick={() => setIsOpen(!isOpen)}>
-          {amount}
-          <ChevronDown className={cn("w-5 h-5 transition-transform", isOpen && "transform rotate-180")} />
-        </button>
-
-        {/* Add this after the amount dropdown */}
-        <button
-          className="ml-4 flex items-center gap-2 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg transition-colors"
-          onClick={() => setShowPositions(!showPositions)}
-        >
-          <TrendingUp className="w-5 h-5" />
-          <span className="text-sm font-medium">Positions</span>
-        </button>
-
-        {isOpen && (
-          <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-md overflow-hidden z-10 min-w-[200px]">
-            {predefinedAmounts.map((amt) => (
-              <button
-                key={amt}
-                className="w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors"
-                onClick={() => {
-                  setAmount(amt)
-                  setIsOpen(false)
-                }}
-              >
-                {amt}
-              </button>
-            ))}
-            <button
-              className="w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors border-t border-gray-200"
-              onClick={() => setIsCustom(true)}
-            >
-              Custom amount
-            </button>
-
-            {isCustom && (
-              <form onSubmit={handleCustomSubmit} className="p-2 border-t border-gray-200">
-                <div className="flex">
+        {/* Center: Trade Amount and Leverage */}
+        <div className="flex items-center gap-3">
+          {/* Trade Amount */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="bg-white/20 text-white border-0 hover:bg-white/30 text-sm">
+                {amount}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="center">
+              <div className="space-y-4">
+                <h4 className="font-medium leading-none">Trade Amount</h4>
+                <div className="flex items-center gap-2">
+                  <Slider
+                    value={sliderValue}
+                    onValueChange={handleSliderChange}
+                    max={100}
+                    step={1}
+                    className="flex-1"
+                  />
                   <Input
                     type="number"
-                    min="0.01"
-                    step="0.01"
-                    placeholder="Enter amount"
-                    value={customValue}
-                    onChange={(e) => setCustomValue(e.target.value)}
-                    className="w-full rounded-r-none"
-                    autoFocus
+                    value={sliderValue[0]}
+                    onChange={(e) => handleSliderChange([Number.parseInt(e.target.value) || 0])}
+                    className="w-20"
                   />
-                  <button type="submit" className="bg-yellow-500 text-white px-3 rounded-r-md">
-                    Set
-                  </button>
                 </div>
-              </form>
-            )}
-          </div>
-        )}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Leverage Selector */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="bg-white/20 text-white border-0 hover:bg-white/30 text-sm">
+                {leverage}x
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48" align="center">
+              <div className="space-y-3">
+                <h4 className="font-medium leading-none">Leverage</h4>
+                <div className="flex gap-2">
+                  {leverageOptions.map((option) => (
+                    <Button
+                      key={option}
+                      variant={leverage === option ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setLeverage(option)}
+                      className="flex-1"
+                    >
+                      {option}x
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">Higher leverage increases both potential profits and losses</p>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Right: Chain Filter */}
+        <div>
+          <ChainFilter selectedChains={selectedChains} onChainsChange={onChainsChange} />
+        </div>
       </div>
     </header>
   )

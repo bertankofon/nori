@@ -1,24 +1,44 @@
 "use client"
 
-import { TrendingUp, Wallet, User } from "lucide-react"
+import { Home, TrendingUp, User } from "lucide-react"
 
-export default function BottomNav() {
+interface BottomNavProps {
+  activeTab?: "discover" | "positions" | "profile"
+  onTabChange?: (tab: "discover" | "positions" | "profile") => void
+}
+
+export default function BottomNav({ activeTab = "discover", onTabChange }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-gray-200">
-      <div className="flex items-center justify-around py-2">
-        <button className="flex flex-col items-center gap-1 p-3 text-green-600">
-          <TrendingUp className="w-6 h-6" />
-          <span className="text-xs font-medium">Discover</span>
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg safe-area-pb">
+      <div className="flex justify-around items-center h-16 px-4">
+        <button
+          className={`flex flex-col items-center justify-center flex-1 h-full ${
+            activeTab === "discover" ? "text-yellow-500" : "text-gray-500"
+          }`}
+          onClick={() => onTabChange?.("discover")}
+        >
+          <Home className="w-5 h-5" />
+          <span className="text-xs mt-1">Discover</span>
         </button>
-        <button className="flex flex-col items-center gap-1 p-3 text-gray-400">
-          <Wallet className="w-6 h-6" />
-          <span className="text-xs font-medium">My Assets</span>
+        <button
+          className={`flex flex-col items-center justify-center flex-1 h-full ${
+            activeTab === "positions" ? "text-yellow-500" : "text-gray-500"
+          }`}
+          onClick={() => onTabChange?.("positions")}
+        >
+          <TrendingUp className="w-5 h-5" />
+          <span className="text-xs mt-1">Positions</span>
         </button>
-        <button className="flex flex-col items-center gap-1 p-3 text-gray-400">
-          <User className="w-6 h-6" />
-          <span className="text-xs font-medium">Profile</span>
+        <button
+          className={`flex flex-col items-center justify-center flex-1 h-full ${
+            activeTab === "profile" ? "text-yellow-500" : "text-gray-500"
+          }`}
+          onClick={() => onTabChange?.("profile")}
+        >
+          <User className="w-5 h-5" />
+          <span className="text-xs mt-1">Profile</span>
         </button>
       </div>
-    </nav>
+    </div>
   )
 }

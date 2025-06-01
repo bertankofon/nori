@@ -115,10 +115,17 @@ export default function PositionsPanel({ onClose }: PositionsPanelProps) {
                     </div>
 
                     <div className="text-right">
-                      <p className={`font-bold ${position.pnl >= 0 ? "text-green-600" : "text-red-600"}`}>
-                        {formatPnL(position.pnl)}
-                      </p>
-                      <p className="text-sm text-gray-600">Current: ${position.currentPrice.toFixed(6)}</p>
+                      <div>
+                        <p className="text-xs text-gray-500">Current Price</p>
+                        <p className="font-medium text-sm">${position.currentPrice.toFixed(6)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">P&L</p>
+                        <p className={`font-medium text-sm ${position.pnl >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          {formatPnL(position.pnl)}
+                          <span className="text-xs ml-1">({((position.pnl / position.amount) * 100).toFixed(2)}%)</span>
+                        </p>
+                      </div>
                       <Button
                         size="sm"
                         variant="outline"
