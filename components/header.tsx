@@ -34,22 +34,25 @@ export default function Header({
   const leverageOptions = [1, 2, 5]
 
   return (
-    <header className="bg-white/10 backdrop-blur-md p-4 safe-area-pt">
+    <header className="bg-white/10 backdrop-blur-md p-3 md:p-4 safe-area-pt">
       <div className="flex items-center justify-between">
         {/* Left: Logo and Name */}
-        <div className="flex items-center">
-          <div className="w-8 h-8 mr-2 flex items-center justify-center">
+        <div className="flex items-center min-w-0">
+          <div className="w-6 h-6 md:w-8 md:h-8 mr-2 flex items-center justify-center flex-shrink-0">
             <img src="/logo.png" alt="TradeLayer Logo" className="w-full h-full" />
           </div>
-          <h1 className="text-lg font-bold text-white">TradeLayer</h1>
+          <h1 className="text-base md:text-lg font-bold text-white truncate">TradeLayer</h1>
         </div>
 
         {/* Center: Trade Amount and Leverage */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           {/* Trade Amount */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="bg-white/20 text-white border-0 hover:bg-white/30 text-sm">
+              <Button
+                variant="outline"
+                className="bg-white/20 text-white border-0 hover:bg-white/30 text-xs md:text-sm px-2 md:px-3"
+              >
                 {amount}
               </Button>
             </PopoverTrigger>
@@ -78,7 +81,10 @@ export default function Header({
           {/* Leverage Selector */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="bg-white/20 text-white border-0 hover:bg-white/30 text-sm">
+              <Button
+                variant="outline"
+                className="bg-white/20 text-white border-0 hover:bg-white/30 text-xs md:text-sm px-2 md:px-3"
+              >
                 {leverage}x
               </Button>
             </PopoverTrigger>

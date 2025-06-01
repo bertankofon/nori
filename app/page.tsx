@@ -116,9 +116,9 @@ function HomeContent() {
           selectedChains={selectedChains}
           onChainsChange={setSelectedChains}
         />
-        <main className="flex-1 flex items-center justify-center p-4 pb-24">
-          <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
-            <div className="p-6 text-center">
+        <main className="flex-1 flex items-center justify-center p-3 md:p-4 pb-24">
+          <Card className="w-full max-w-sm bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
+            <div className="p-4 md:p-6 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto mb-4"></div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Loading Tokens</h2>
               <p className="text-gray-600">Fetching real token data from API...</p>
@@ -142,9 +142,9 @@ function HomeContent() {
           selectedChains={selectedChains}
           onChainsChange={setSelectedChains}
         />
-        <main className="flex-1 flex items-center justify-center p-4 pb-24">
-          <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
-            <div className="p-6 text-center">
+        <main className="flex-1 flex items-center justify-center p-3 md:p-4 pb-24">
+          <Card className="w-full max-w-sm bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
+            <div className="p-4 md:p-6 text-center">
               <h2 className="text-xl font-bold text-gray-900 mb-2">
                 {tokensError ? "Error Loading Tokens" : "No Tokens Available"}
               </h2>
@@ -174,8 +174,8 @@ function HomeContent() {
             onChainsChange={setSelectedChains}
           />
           <main className="flex-1 flex flex-col items-center">
-            <div className="flex-1 flex items-center justify-center p-4 w-full">
-              <div className="w-full">
+            <div className="flex-1 flex items-center justify-center p-3 md:p-4 w-full">
+              <div className="w-full max-w-sm">
                 <RealTokenCard
                   tokenData={currentToken}
                   onSwipe={handleSwipe}

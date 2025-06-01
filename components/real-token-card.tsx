@@ -100,38 +100,40 @@ export default function RealTokenCard({ tokenData, onSwipe, isReady, currentInde
         onTouchMove={(e) => isDragging && handleDragMove(e.touches[0].clientX, e.touches[0].clientY)}
         onTouchEnd={handleDragEnd}
       >
-        <CardContent className="p-6">
+        <CardContent className="p-4 md:p-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
               {tokenData.imageUrl ? (
                 <img
                   src={tokenData.imageUrl || "/placeholder.svg"}
                   alt={tokenData.name}
-                  className="w-12 h-12 rounded-full"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full flex-shrink-0"
                   onError={(e) => {
                     e.currentTarget.style.display = "none"
                   }}
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">{tokenData.symbol.charAt(0)}</span>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-bold text-base md:text-lg">{tokenData.symbol.charAt(0)}</span>
                 </div>
               )}
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">{tokenData.name}</h2>
-                <p className="text-gray-600 font-medium">{tokenData.symbol}</p>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg md:text-xl font-bold text-gray-900 truncate">{tokenData.name}</h2>
+                <p className="text-gray-600 font-medium text-sm md:text-base">{tokenData.symbol}</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-gray-900">${formatPrice(tokenData.price)}</p>
+            <div className="text-right flex-shrink-0">
+              <p className="text-xl md:text-2xl font-bold text-gray-900">${formatPrice(tokenData.price)}</p>
               <div className="flex items-center justify-end space-x-1">
                 {tokenData.change24h >= 0 ? (
-                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-green-500" />
                 ) : (
-                  <TrendingDown className="w-4 h-4 text-red-500" />
+                  <TrendingDown className="w-3 h-3 md:w-4 md:h-4 text-red-500" />
                 )}
-                <span className={`text-sm font-medium ${tokenData.change24h >= 0 ? "text-green-500" : "text-red-500"}`}>
+                <span
+                  className={`text-xs md:text-sm font-medium ${tokenData.change24h >= 0 ? "text-green-500" : "text-red-500"}`}
+                >
                   {tokenData.change24h >= 0 ? "+" : ""}
                   {tokenData.change24h.toFixed(2)}%
                 </span>
@@ -140,20 +142,20 @@ export default function RealTokenCard({ tokenData, onSwipe, isReady, currentInde
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="flex items-center space-x-2 mb-1">
-                <BarChart3 className="w-4 h-4 text-gray-600" />
-                <span className="text-sm text-gray-600">Volume 24h</span>
+          <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
+            <div className="bg-gray-50 rounded-lg p-2.5 md:p-3">
+              <div className="flex items-center space-x-1 md:space-x-2 mb-1">
+                <BarChart3 className="w-3 h-3 md:w-4 md:h-4 text-gray-600" />
+                <span className="text-xs md:text-sm text-gray-600">Volume 24h</span>
               </div>
-              <p className="font-semibold text-gray-900">${formatNumber(tokenData.volume24h)}</p>
+              <p className="font-semibold text-gray-900 text-sm md:text-base">${formatNumber(tokenData.volume24h)}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="flex items-center space-x-2 mb-1">
-                <DollarSign className="w-4 h-4 text-gray-600" />
-                <span className="text-sm text-gray-600">Market Cap</span>
+            <div className="bg-gray-50 rounded-lg p-2.5 md:p-3">
+              <div className="flex items-center space-x-1 md:space-x-2 mb-1">
+                <DollarSign className="w-3 h-3 md:w-4 md:h-4 text-gray-600" />
+                <span className="text-xs md:text-sm text-gray-600">Market Cap</span>
               </div>
-              <p className="font-semibold text-gray-900">${formatNumber(tokenData.marketCap)}</p>
+              <p className="font-semibold text-gray-900 text-sm md:text-base">${formatNumber(tokenData.marketCap)}</p>
             </div>
           </div>
 
@@ -165,21 +167,21 @@ export default function RealTokenCard({ tokenData, onSwipe, isReady, currentInde
           </div>
 
           {/* Action Buttons */}
-          <div className="flex space-x-3">
+          <div className="flex space-x-2 md:space-x-3">
             <Button
               variant="outline"
               size="lg"
-              className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+              className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 h-12 md:h-auto text-sm md:text-base"
               onClick={() => onSwipe("left", tokenData.symbol)}
               disabled={!isReady}
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 mr-1 md:mr-2" />
               Short
             </Button>
             <Button
               variant="outline"
               size="lg"
-              className="px-4 border-gray-200 text-gray-600 hover:bg-gray-50"
+              className="px-3 md:px-4 border-gray-200 text-gray-600 hover:bg-gray-50 h-12 md:h-auto"
               onClick={() => onSwipe("pass", tokenData.symbol)}
             >
               <X className="w-4 h-4" />
@@ -187,17 +189,17 @@ export default function RealTokenCard({ tokenData, onSwipe, isReady, currentInde
             <Button
               variant="outline"
               size="lg"
-              className="flex-1 border-green-200 text-green-600 hover:bg-green-50 hover:border-green-300"
+              className="flex-1 border-green-200 text-green-600 hover:bg-green-50 hover:border-green-300 h-12 md:h-auto text-sm md:text-base"
               onClick={() => onSwipe("right", tokenData.symbol)}
               disabled={!isReady}
             >
-              <ArrowRight className="w-4 h-4 mr-2" />
+              <ArrowRight className="w-4 h-4 mr-1 md:mr-2" />
               Long
             </Button>
           </div>
 
           {/* Swipe Instructions */}
-          <div className="mt-4 text-center">
+          <div className="mt-3 md:mt-4 text-center">
             <p className="text-xs text-gray-500">Swipe left to short • Swipe right to long • Tap X to pass</p>
           </div>
         </CardContent>
