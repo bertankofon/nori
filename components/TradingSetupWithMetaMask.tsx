@@ -220,4 +220,4 @@ export default function TradingSetupWithMetaMask() {
       </div>
     </Card>
   )
-} 
+}

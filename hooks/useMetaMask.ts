@@ -249,4 +249,4 @@ export function useMetaMask(): UseMetaMaskReturn {
     disconnect,
     walletClient,
   }
-} 
+}
