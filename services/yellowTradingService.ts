@@ -1,5 +1,8 @@
 import { createAuthRequestMessage, createAuthVerifyMessage, createAppSessionMessage } from "@erc7824/nitrolite"
 import { ethers } from "ethers"
+import { createWalletClient, custom } from "viem"
+import { polygon } from "viem/chains"
+import { Hex } from "viem"
 
 // SES compatibility fix
 declare global {
@@ -9,6 +12,13 @@ declare global {
 }
 
 // EIP-712 Types for authentication - this was missing!
+
+const getAuthDomain = () => {
+  return {
+      name: "TokenSwiper",
+  };
+}; 
+
 const AUTH_TYPES = {
   EIP712Domain: [{ name: "name", type: "string" }],
   Policy: [
@@ -25,6 +35,22 @@ const AUTH_TYPES = {
     { name: "amount", type: "uint256" },
   ],
 }
+
+// Create a static MetaMask wallet client holder
+let metaMaskWalletClient: ReturnType<typeof createWalletClient> | null = null;
+let metaMaskAddress: string | null = null;
+
+// Set the MetaMask wallet client from outside (will be called by the MetaMask hook)
+export const setMetaMaskWalletClient = (client: ReturnType<typeof createWalletClient> | null, address: string | null) => {
+  metaMaskWalletClient = client;
+  metaMaskAddress = address;
+  console.log("🦊 MetaMask wallet client set:", !!metaMaskWalletClient, "Address:", metaMaskAddress);
+};
+
+// Check if MetaMask is connected
+export const isMetaMaskConnected = () => {
+  return !!metaMaskWalletClient && !!metaMaskAddress;
+};
 
 export interface Position {
   id: string
@@ -46,6 +72,29 @@ export interface TradingSession {
   status: "active" | "closed"
   positions: Position[]
 }
+
+const expire = String(Math.floor(Date.now() / 1000) + 3600);
+
+// Add a safe localStorage accessor
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.error('localStorage.getItem error:', e);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.error('localStorage.setItem error:', e);
+    }
+  }
+};
 
 class YellowTradingService {
   private ws: WebSocket | null = null
@@ -190,17 +239,22 @@ class YellowTradingService {
       throw new Error("Wallet or WebSocket not available")
     }
 
+    // Check if MetaMask is connected
+    if (!metaMaskWalletClient || !metaMaskAddress) {
+      throw new Error("MetaMask not connected. Please connect MetaMask first")
+    }
+
     try {
       console.log("🔐 YellowTradingService: Creating authentication request...")
 
       // Corrected auth request - using the proper format from documentation
       const authRequest = await createAuthRequestMessage({
-        wallet: this.stateWallet.address,
-        participant: this.stateWallet.address,
+        wallet: ethers.getAddress(metaMaskAddress) as `0x${string}`, // MetaMask address
+        participant: ethers.getAddress(this.stateWallet.address) as `0x${string}`,  // Local key (stateWallet) remains as participant
         app_name: "TokenSwiper",
-        expire: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiration
+        expire: expire, // 1 hour expiration
         scope: "trading",
-        application: this.stateWallet.address,
+        application: ethers.getAddress(metaMaskAddress) as `0x${string}`, // MetaMask address
         allowances: [],
       })
 
@@ -235,7 +289,7 @@ class YellowTradingService {
 
         // Store JWT token if provided
         if (message.res[2] && message.res[2][0] && message.res[2][0].jwt_token) {
-          localStorage.setItem("clearnode_jwt", message.res[2][0].jwt_token)
+          safeLocalStorage.setItem("clearnode_jwt", message.res[2][0].jwt_token)
           console.log("💾 YellowTradingService: JWT token stored")
         }
 
@@ -275,32 +329,79 @@ class YellowTradingService {
       const challenge = challengeData.challenge_message
       console.log("🎯 YellowTradingService: Extracted challenge:", challenge)
 
-      // Create EIP-712 message signer function as per documentation
-      const eip712MessageSigner = async (payload: any) => {
+      // Check if MetaMask is connected
+      if (!metaMaskWalletClient || !metaMaskAddress) {
+        throw new Error("MetaMask not connected. Please connect MetaMask first")
+      }
+
+      // Create EIP-712 message signer function using MetaMask
+      const eip712MessageSigner = async (payload: any): Promise<`0x${string}`> => {
         try {
-          console.log("✍️ YellowTradingService: Signing EIP-712 message...")
+          console.log("✍️ YellowTradingService: Signing EIP-712 message with MetaMask...")
+          console.log("📝 Payload to sign:", payload)
+          console.log("🔑 metaMaskAddress:", metaMaskAddress)
+
+          if (!metaMaskAddress) {
+            throw new Error("MetaMask address not available")
+          }
+
+          // Extract challenge from the payload
+          let challengeUUID = "";
+          
+          try {
+            // Try to extract challenge from different payload formats
+            if (typeof payload === "string") {
+              try {
+                const parsed = JSON.parse(payload);
+                if (parsed.res && parsed.res[2] && parsed.res[2][0] && parsed.res[2][0].challenge_message) {
+                  challengeUUID = parsed.res[2][0].challenge_message;
+                }
+              } catch (e) {
+                challengeUUID = payload;
+              }
+            } else if (payload && typeof payload === "object") {
+              // Handle challenge data object
+              if (payload.res && payload.res[2] && payload.res[2][0]) {
+                challengeUUID = payload.res[2][0].challenge_message || "";
+              }
+            }
+          } catch (e) {
+            console.error("Error extracting challenge:", e);
+            // Use the raw challenge data as fallback
+            challengeUUID = challenge;
+          }
+          
+          // If extraction failed, use the original challenge
+          if (!challengeUUID) {
+            challengeUUID = challenge;
+          }
+          
+          console.log("Extracted challenge:", challengeUUID);
 
           // Create the message structure as per documentation
           const messageToSign = {
-            challenge: challenge,
+            challenge: challengeUUID,
             scope: "trading",
-            wallet: this.stateWallet!.address,
-            application: this.stateWallet!.address,
-            participant: this.stateWallet!.address,
-            expire: Math.floor(Date.now() / 1000) + 3600,
+            wallet: ethers.getAddress(metaMaskAddress) as `0x${string}`, // MetaMask address
+            application: ethers.getAddress(metaMaskAddress) as `0x${string}`, // MetaMask address
+            participant: ethers.getAddress(this.stateWallet!.address) as `0x${string}`, // Local key (stateWallet) remains as participant
+            expire: parseInt(expire), // Convert to number
             allowances: [],
           }
 
           console.log("📝 YellowTradingService: Message to sign:", messageToSign)
 
-          // Sign using EIP-712 structured data
-          const signature = await this.stateWallet!.signTypedData(
-            {
-              name: "TokenSwiper",
-            },
-            AUTH_TYPES,
-            messageToSign,
-          )
+          // Sign using EIP-712 structured data with MetaMask wallet client
+          if (!metaMaskWalletClient) throw new Error("MetaMask wallet client not available");
+          
+          // Use the same domain structure as in the example code
+          const signature = await metaMaskWalletClient.signTypedData({
+            account: metaMaskWalletClient.account!,
+            domain: getAuthDomain() as any,
+            types: AUTH_TYPES,
+            primaryType: "Policy",
+            message: messageToSign,
+          });
 
           console.log("✅ YellowTradingService: EIP-712 signature created:", signature.substring(0, 20) + "...")
           return signature
@@ -312,9 +413,8 @@ class YellowTradingService {
 
       // Create auth verify message using the corrected signer
       const authVerify = await createAuthVerifyMessage(
-        eip712MessageSigner,
-        data, // Pass the raw message data
-        this.stateWallet.address,
+        eip712MessageSigner as any, // Type cast to resolve the MessageSigner mismatch
+        message // Pass the raw message data
       )
 
       console.log("📤 YellowTradingService: Sending auth verification...")
@@ -335,18 +435,23 @@ class YellowTradingService {
     try {
       console.log("📈 YellowTradingService: Creating trading session...")
 
-      const messageSigner = async (payload: any) => {
+      // Create a properly typed message signer
+      const messageSigner = async (payload: any): Promise<`0x${string}`> => {
         const message = JSON.stringify(payload)
         const digestHex = ethers.id(message)
         const messageBytes = ethers.getBytes(digestHex)
         const { serialized: signature } = this.stateWallet!.signingKey.sign(messageBytes)
-        return signature
+        // Convert the signature to the expected format
+        return ethers.hexlify(signature) as `0x${string}`
       }
 
       // Define trading session parameters
       const appDefinition = {
         protocol: "nitroliterpc",
-        participants: [this.stateWallet.address, this.stateWallet.address], // Self-trading for demo
+        participants: [
+          ethers.getAddress(this.stateWallet.address) as `0x${string}`, 
+          ethers.getAddress(this.stateWallet.address) as `0x${string}`
+        ], // Self-trading for demo
         weights: [100, 0],
         quorum: 100,
         challenge: 0,
@@ -355,18 +460,21 @@ class YellowTradingService {
 
       const allocations = [
         {
-          participant: this.stateWallet.address,
+          participant: ethers.getAddress(this.stateWallet.address) as `0x${string}`,
           asset: "usdc",
           amount: "1000000", // 1000 USDC with 6 decimals
         },
       ]
 
-      const signedMessage = await createAppSessionMessage(messageSigner, [
-        {
-          definition: appDefinition,
-          allocations: allocations,
-        },
-      ])
+      const signedMessage = await createAppSessionMessage(
+        messageSigner as any, 
+        [
+          {
+            definition: appDefinition as any,
+            allocations: allocations as any,
+          },
+        ]
+      )
 
       console.log("📤 YellowTradingService: Sending app session creation request...")
       this.ws.send(signedMessage)
@@ -509,14 +617,18 @@ class YellowTradingService {
 
   // Save positions to localStorage
   private savePositionsToStorage(): void {
-    const positionsArray = Array.from(this.positions.values())
-    localStorage.setItem("trading_positions", JSON.stringify(positionsArray))
+    try {
+      const positionsArray = Array.from(this.positions.values())
+      safeLocalStorage.setItem("trading_positions", JSON.stringify(positionsArray))
+    } catch (error) {
+      console.error("💥 YellowTradingService: Error saving positions to storage:", error)
+    }
   }
 
   // Load positions from localStorage
   private loadPositionsFromStorage(): void {
     try {
-      const stored = localStorage.getItem("trading_positions")
+      const stored = safeLocalStorage.getItem("trading_positions")
       if (stored) {
         const positionsArray: Position[] = JSON.parse(stored)
         this.positions.clear()

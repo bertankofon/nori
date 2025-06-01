@@ -88,7 +88,6 @@ export default function TradingSetup() {
             <div className="space-y-2">
               <Button
                 onClick={handleInitialize}
-                disabled={isLoading || !privateKey.trim()}
                 className="w-full bg-yellow-600 hover:bg-yellow-700"
               >
                 {isLoading ? (

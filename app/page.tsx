@@ -4,7 +4,7 @@ import { useState } from "react"
 import TokenCard from "@/components/token-card"
 import BottomNav from "@/components/bottom-nav"
 import Header from "@/components/header"
-import TradingSetup from "@/components/trading-setup"
+import TradingSetupWithMetaMask from "@/components/TradingSetupWithMetaMask"
 import PositionsPanel from "@/components/positions-panel"
 import { mockTokens } from "@/lib/mock-data"
 import { TradingProvider, useTrading } from "@/contexts/TradingContext"
@@ -51,7 +51,11 @@ function HomeContent() {
   const currentToken = mockTokens[currentIndex]
 
   if (!isInitialized) {
-    return <TradingSetup />
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-yellow-400 to-yellow-500 flex items-center justify-center p-4">
+        <TradingSetupWithMetaMask />
+      </div>
+    )
   }
 
   return (
